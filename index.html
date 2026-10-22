@@ -1,0 +1,3233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+<meta name="description" content="Zombie Survival - Kill zombies, level up, buy weapons from the store. Free action game by Qazi Games."/>
+<title>Zombie Survival — Qazi Games</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#04050a">
+<link rel="icon" href="icon-192.png">
+
+
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#04050a;--panel:#0d0f1a;--border:#1a1d2e;
+  --green:#00ff88;--red:#ff3355;--blue:#00aaff;
+  --purple:#aa44ff;--gold:#ffcc00;--orange:#ff8800;
+  --text:#e0e8ff;--muted:#556080;--radius:10px;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;overflow:hidden;overscroll-behavior:none}
+#hud{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 8px;background:rgba(4,5,10,0.92);border-bottom:1px solid var(--border);flex-wrap:wrap}
+.hud-box{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:4px 10px;display:flex;flex-direction:column;align-items:center;min-width:56px}
+.hud-label{font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
+.hud-val{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;line-height:1.3}
+#hud-hp .hud-val{color:var(--green)}
+#hud-wave .hud-val{color:var(--blue)}
+#hud-score .hud-val{color:var(--gold)}
+#hud-coins .hud-val{color:var(--gold)}
+#hud-kills .hud-val{color:var(--red)}
+#hud-ammo .hud-val{color:var(--orange)}
+#hud-weapon .hud-val{color:var(--purple);font-size:11px}
+#hud-level .hud-val{color:var(--green)}
+#hud-timer .hud-val{color:var(--orange)}
+#hud-gen .hud-val{color:var(--blue);font-size:11px}
+#hud-mutator{border-color:var(--orange);background:rgba(255,136,0,0.08)}
+#hud-mutator .hud-val{color:var(--orange);font-size:10px}
+.bar-track{width:100%;min-width:44px;height:8px;background:#111;border-radius:4px;overflow:hidden;margin-top:3px}
+.bar-fill{height:100%;border-radius:4px;transition:width 0.2s}
+#hp-bar{background:linear-gradient(90deg,var(--red),var(--green))}
+#xp-bar{background:linear-gradient(90deg,var(--purple),var(--blue))}
+#gen-bar{background:linear-gradient(90deg,var(--orange),var(--blue))}
+.hud-btns{display:flex;gap:6px;margin-left:auto}
+.hud-btn{background:var(--panel);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:6px;font-family:'Orbitron',sans-serif;font-size:10px;cursor:pointer;letter-spacing:1px;transition:all 0.2s}
+.hud-btn:hover{border-color:var(--green);color:var(--green)}
+.hud-btn.active{border-color:var(--gold);color:var(--gold)}
+#gameCanvas{display:block;width:100vw;cursor:crosshair;touch-action:none}
+.overlay{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(4,5,10,0.93);backdrop-filter:blur(8px)}
+.overlay-box{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:28px 24px;max-width:560px;width:92%;max-height:92vh;overflow-y:auto;text-align:center;box-shadow:0 0 60px rgba(0,255,136,0.1)}
+.overlay-box h1{font-family:'Orbitron',sans-serif;font-size:clamp(22px,5vw,36px);font-weight:900;margin-bottom:8px}
+.overlay-box h2{font-family:'Orbitron',sans-serif;font-size:clamp(18px,4vw,28px);font-weight:700;margin-bottom:8px}
+.overlay-box p{color:var(--muted);font-size:14px;margin-bottom:6px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0}
+.stat-item{background:#0a0c15;border:1px solid var(--border);border-radius:8px;padding:10px}
+.stat-item .s-label{font-size:10px;color:var(--muted);letter-spacing:1px}
+.stat-item .s-val{font-family:'Orbitron',sans-serif;font-size:18px;color:var(--gold)}
+.btn-row{display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+.btn{padding:11px 22px;border:none;border-radius:8px;font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:1px;cursor:pointer;transition:all 0.2s}
+.btn:active{transform:scale(0.95)}
+.btn-green{background:linear-gradient(135deg,#00cc66,#00ff88);color:#000}
+.btn-blue{background:linear-gradient(135deg,#0066cc,#00aaff);color:#fff}
+.btn-red{background:linear-gradient(135deg,#cc0033,#ff3355);color:#fff}
+.btn-gold{background:linear-gradient(135deg,#cc9900,#ffcc00);color:#000}
+.btn-purple{background:linear-gradient(135deg,#660099,#aa44ff);color:#fff}
+.hidden{display:none!important}
+#waveBanner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:150;font-family:'Orbitron',sans-serif;font-size:clamp(28px,6vw,52px);font-weight:900;color:var(--green);text-shadow:0 0 30px var(--green);pointer-events:none;opacity:0;transition:opacity 0.5s;text-align:center;width:90%}
+#waveBanner.show{opacity:1}
+#combo{position:fixed;top:70px;right:16px;font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;color:var(--gold);text-shadow:0 0 20px var(--gold);pointer-events:none;opacity:0;transition:opacity 0.3s;z-index:120}
+#combo.show{opacity:1}
+#storeOverlay,#skillsOverlay{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;background:rgba(4,5,10,0.96);backdrop-filter:blur(10px)}
+.store-box{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:700px;width:95%;max-height:90vh;overflow-y:auto}
+.store-box h2{font-family:'Orbitron',sans-serif;font-size:22px;color:var(--gold);margin-bottom:4px;text-align:center}
+.store-coins{text-align:center;font-size:13px;color:var(--muted);margin-bottom:16px}
+.store-coins span{color:var(--gold);font-weight:700}
+.store-tabs{display:flex;gap:6px;margin-bottom:16px;justify-content:center;flex-wrap:wrap}
+.store-tab{padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:12px;cursor:pointer;transition:all 0.2s;color:var(--muted)}
+.store-tab.active{border-color:var(--gold);color:var(--gold);background:rgba(255,204,0,0.08)}
+.store-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.store-item{background:#0a0c15;border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;transition:all 0.2s;position:relative}
+.store-item:hover{border-color:var(--blue)}
+.store-item.owned{border-color:var(--green)}
+.store-item.equipped{border-color:var(--gold);background:rgba(255,204,0,0.05)}
+.store-item .item-icon{font-size:28px;margin-bottom:6px}
+.store-item .item-name{font-family:'Orbitron',sans-serif;font-size:10px;color:var(--text);margin-bottom:4px}
+.store-item .item-desc{font-size:10px;color:var(--muted);margin-bottom:8px;min-height:28px}
+.store-item .item-price{font-family:'Orbitron',sans-serif;font-size:13px;color:var(--gold);margin-bottom:8px}
+.store-item .item-btn{width:100%;padding:5px;border:none;border-radius:6px;font-size:10px;font-family:'Orbitron',sans-serif;cursor:pointer;letter-spacing:1px}
+.store-item .item-btn.buy{background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff}
+.store-item .item-btn.equip{background:linear-gradient(135deg,#00cc66,#00ff88);color:#000}
+.store-item .item-btn.equipped-lbl{background:#1a2a1a;color:var(--green);cursor:default}
+.store-item .item-btn.cant{background:#1a1a1a;color:var(--muted);cursor:not-allowed}
+.badge-owned{position:absolute;top:6px;right:6px;background:var(--green);color:#000;font-size:8px;font-weight:700;padding:2px 5px;border-radius:4px}
+.badge-count{position:absolute;top:6px;left:6px;background:var(--purple);color:#fff;font-size:8px;font-weight:700;padding:2px 5px;border-radius:4px}
+.skills-box{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:600px;width:95%;max-height:90vh;overflow-y:auto}
+.skills-box h2{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--purple);text-align:center;margin-bottom:4px}
+.skill-points-info{text-align:center;color:var(--muted);font-size:13px;margin-bottom:16px}
+.skill-points-info span{color:var(--purple);font-weight:700}
+.skills-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.skill-card{background:#0a0c15;border:1px solid var(--border);border-radius:10px;padding:12px}
+.skill-card h4{font-family:'Orbitron',sans-serif;font-size:11px;color:var(--blue);margin-bottom:4px}
+.skill-card p{font-size:11px;color:var(--muted);margin-bottom:8px}
+.skill-level{display:flex;gap:4px;margin-bottom:8px}
+.skill-pip{width:16px;height:6px;border-radius:3px;background:#1a1d2e}
+.skill-pip.filled{background:var(--purple)}
+.skill-upgrade-btn{width:100%;padding:5px;border:none;border-radius:6px;font-size:10px;font-family:'Orbitron',sans-serif;cursor:pointer;background:linear-gradient(135deg,var(--purple),var(--blue));color:#fff;letter-spacing:1px}
+.skill-upgrade-btn:disabled{background:#1a1a1a;color:var(--muted);cursor:not-allowed}
+#joystick{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom,0px));left:calc(24px + env(safe-area-inset-left,0px));z-index:110;display:none;touch-action:none}
+#joystick-base{width:96px;height:96px;border-radius:50%;background:rgba(255,255,255,0.06);border:2px solid rgba(255,255,255,0.15);position:relative}
+#joystick-knob{width:40px;height:40px;border-radius:50%;background:rgba(0,255,136,0.5);border:2px solid var(--green);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);transition:all 0.05s}
+#mobile-shoot{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom,0px));right:calc(24px + env(safe-area-inset-right,0px));z-index:110;display:none;width:72px;height:72px;border-radius:50%;background:rgba(255,51,85,0.3);border:2px solid var(--red);font-size:24px;align-items:center;justify-content:center;cursor:pointer;touch-action:none;user-select:none}
+@media(max-width:700px){#joystick.show{display:block}#mobile-shoot.show{display:flex}#gameCanvas{cursor:default}}
+.ad-banner{width:100%;max-width:728px;margin:0 auto;min-height:60px;display:flex;align-items:center;justify-content:center;background:var(--panel);border:1px dashed var(--border);border-radius:8px;overflow:hidden}
+#minimap{position:fixed;bottom:12px;right:12px;z-index:110;border:1px solid var(--border);border-radius:6px;background:rgba(4,5,10,0.8);display:none}
+#minimap.show{display:block}
+@media(max-width:700px){#minimap.show{display:none}}
+.mode-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+.mode-card{background:#0a0c15;border:1px solid var(--border);border-radius:10px;padding:14px;transition:all 0.2s;text-align:left}
+.mode-card:hover{border-color:var(--green)}
+.mode-card h4{font-family:'Orbitron',sans-serif;font-size:12px;color:var(--green);margin-bottom:4px}
+.mode-card p{font-size:11px;color:var(--muted);margin-bottom:8px}
+.mode-card-actions{display:flex;gap:6px}
+.mc-btn{flex:1;padding:6px 4px;border:none;border-radius:6px;font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:0.5px;cursor:pointer}
+.mc-btn.mc-new{background:linear-gradient(135deg,#00cc66,#00ff88);color:#000}
+.mc-btn.mc-continue{background:linear-gradient(135deg,#0066cc,#00aaff);color:#fff}
+/* ── Consumable item bar: purchased power-ups are now real, usable items ── */
+#itemBar{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);z-index:115;display:none;gap:6px}
+#itemBar.show{display:flex}
+.item-slot{width:52px;background:rgba(13,15,26,0.9);border:1px solid var(--border);border-radius:8px;padding:4px 2px;text-align:center;cursor:pointer;transition:all 0.15s;user-select:none}
+.item-slot:hover{border-color:var(--gold)}
+.item-slot.empty{opacity:0.3;cursor:not-allowed}
+.item-slot .is-icon{font-size:18px;line-height:1.1}
+.item-slot .is-key{font-family:'Orbitron',sans-serif;font-size:8px;color:var(--muted);letter-spacing:1px}
+.item-slot .is-count{font-family:'Orbitron',sans-serif;font-size:10px;color:var(--gold)}
+@media(max-width:700px){#itemBar{bottom:110px;transform:translateX(-50%) scale(0.85)}}
+.mut-tag{display:inline-block;background:rgba(255,136,0,0.12);border:1px solid var(--orange);color:var(--orange);border-radius:20px;padding:3px 10px;font-size:10px;font-family:'Orbitron',sans-serif;margin:2px}
+.help-line{font-size:11px;color:var(--muted);margin-top:10px;line-height:1.6}
+.help-line b{color:var(--text)}
+#victoryOverlay .overlay-box{border-color:var(--gold);box-shadow:0 0 80px rgba(255,204,0,0.18);position:relative;z-index:1}
+#victoryFx{position:absolute;inset:0;pointer-events:none}
+#creditsOverlay{position:fixed;inset:0;z-index:400;background:#000;overflow:hidden;display:flex;align-items:flex-start;justify-content:center}
+#creditsRoll{width:92%;max-width:520px;text-align:center;margin-top:100vh;font-family:'Orbitron',sans-serif}
+#creditsRoll .c-title{font-size:clamp(20px,5vw,32px);font-weight:900;color:var(--red);margin-bottom:4px}
+#creditsRoll .c-sub{font-size:12px;color:var(--muted);letter-spacing:2px;margin-bottom:46px}
+#creditsRoll .c-role{font-size:11px;color:var(--blue);letter-spacing:2px;margin-top:34px;margin-bottom:6px}
+#creditsRoll .c-name{font-size:18px;color:var(--text);font-family:'Inter',sans-serif;font-weight:600}
+#creditsRoll .c-thanks{margin-top:60px;font-size:13px;color:var(--green);font-family:'Inter',sans-serif;line-height:1.8}
+#creditsSkip{position:fixed;top:16px;right:16px;z-index:401}
+@keyframes creditsScroll{
+  0%{transform:translateY(0)}
+  100%{transform:translateY(-100%)}
+}
+#tutorial{position:fixed;left:50%;bottom:22%;transform:translateX(-50%);z-index:140;background:rgba(13,15,26,0.92);border:1px solid var(--green);border-radius:12px;padding:14px 20px;text-align:center;font-size:14px;line-height:1.7;pointer-events:none;opacity:0;transition:opacity 0.4s;max-width:92%}
+#tutorial.show{opacity:1}
+#tutorial b{color:var(--green);font-family:'Orbitron',sans-serif;font-size:12px}
+</style>
+</head>
+<body>
+
+<div id="hud">
+  <div class="hud-box" id="hud-hp">
+    <div class="hud-label">HP</div>
+    <div class="hud-val" id="hp-val">100</div>
+    <div class="bar-track"><div class="bar-fill" id="hp-bar" style="width:100%"></div></div>
+  </div>
+  <div class="hud-box" id="hud-lives">
+    <div class="hud-label">Lives</div>
+    <div class="hud-val" id="lives-val" style="color:var(--red)">4</div>
+  </div>
+  <div class="hud-box" id="hud-level">
+    <div class="hud-label">Level</div>
+    <div class="hud-val" id="level-val">1</div>
+    <div class="bar-track"><div class="bar-fill" id="xp-bar" style="width:0%"></div></div>
+  </div>
+  <div class="hud-box" id="hud-wave"><div class="hud-label">Wave</div><div class="hud-val" id="wave-val">1</div></div>
+  <div class="hud-box hidden" id="hud-timer"><div class="hud-label">Time</div><div class="hud-val" id="timer-val">60</div></div>
+  <div class="hud-box hidden" id="hud-gen">
+    <div class="hud-label">Generator</div>
+    <div class="hud-val" id="gen-val">100%</div>
+    <div class="bar-track"><div class="bar-fill" id="gen-bar" style="width:100%"></div></div>
+  </div>
+  <div class="hud-box" id="hud-score"><div class="hud-label">Score</div><div class="hud-val" id="score-val">0</div></div>
+  <div class="hud-box" id="hud-coins"><div class="hud-label">Coins 🪙</div><div class="hud-val" id="coins-val">0</div></div>
+  <div class="hud-box" id="hud-kills"><div class="hud-label">Kills</div><div class="hud-val" id="kills-val">0</div></div>
+  <div class="hud-box" id="hud-ammo"><div class="hud-label">Ammo</div><div class="hud-val" id="ammo-val">∞</div></div>
+  <div class="hud-box" id="hud-weapon"><div class="hud-label">Weapon</div><div class="hud-val" id="weapon-val">PISTOL</div></div>
+  <div class="hud-box hidden" id="hud-mutator"><div class="hud-label">Mutator</div><div class="hud-val" id="mutator-val">—</div></div>
+  <div class="hud-btns">
+    <button class="hud-btn" id="storeBtn">🏪 STORE</button>
+    <button class="hud-btn" id="skillsBtn">⚡ SKILLS</button>
+    <button class="hud-btn" id="saveBtn">💾 SAVE</button>
+    <button class="hud-btn" id="musicBtn">🔊 SOUND</button>
+    <button class="hud-btn" id="pauseBtn">⏸ PAUSE</button>
+  </div>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+<canvas id="minimap" width="120" height="120"></canvas>
+
+<div id="waveBanner"></div>
+<div id="combo"></div>
+<div id="itemBar"></div>
+<div id="tutorial"><b>HOW TO PLAY</b><br>Move: <b>WASD</b> / joystick · Shoot: <b>mouse</b> / 🔫 button<br>Reload: <b>R</b> · Kill zombies, collect 🪙, survive the wave</div>
+
+<div id="joystick"><div id="joystick-base"><div id="joystick-knob"></div></div></div>
+<div id="mobile-shoot">🔫</div>
+
+<div class="overlay" id="menuOverlay">
+  <div class="overlay-box">
+    <p style="font-size:11px;letter-spacing:3px;color:var(--green);margin-bottom:6px">QAZI GAMES</p>
+    <h1 style="color:var(--red)">🧟 ZOMBIE<br><span style="color:var(--green)">SURVIVAL</span></h1>
+    <p style="margin:12px 0">16 enemy types · 6 modes · 8 wave mutators · 3-phase bosses</p>
+<button class="btn btn-green" style="font-size:20px;padding:16px 56px;margin:4px 0 6px" onclick="startGame('survival')">▶ PLAY</button>
+<p style="font-size:11px;margin-bottom:0">or choose a mode below</p>
+    <div class="mode-cards">
+      <div class="mode-card">
+        <h4>⚔️ SURVIVAL</h4>
+        <p>Endless waves. Random mutators from wave 3. Boss every 5th wave.</p>
+        <div class="mode-card-actions">
+          <button class="mc-btn mc-new" onclick="startGame('survival')">▶ New</button>
+          <button class="mc-btn mc-continue hidden" id="continue-survival" onclick="loadGame('survival')">💾 Continue</button>
+        </div>
+      </div>
+      <div class="mode-card">
+        <h4>⏱ TIME ATTACK</h4>
+        <p>75 seconds, no wave breaks. Every kill adds time. Chase the score.</p>
+        <div class="mode-card-actions">
+          <button class="mc-btn mc-new" onclick="startGame('timeattack')">▶ New</button>
+          <button class="mc-btn mc-continue hidden" id="continue-timeattack" onclick="loadGame('timeattack')">💾 Continue</button>
+        </div>
+      </div>
+      <div class="mode-card">
+        <h4>👹 BOSS RUSH</h4>
+        <p>Bosses only, with all three attack phases. Wave N spawns N bosses.</p>
+        <div class="mode-card-actions">
+          <button class="mc-btn mc-new" onclick="startGame('bossrush')">▶ New</button>
+          <button class="mc-btn mc-continue hidden" id="continue-bossrush" onclick="loadGame('bossrush')">💾 Continue</button>
+        </div>
+      </div>
+      <div class="mode-card">
+        <h4>🎯 SNIPER ONLY</h4>
+        <p>Locked to the sniper. Pierces the whole horde if you line them up.</p>
+        <div class="mode-card-actions">
+          <button class="mc-btn mc-new" onclick="startGame('sniper')">▶ New</button>
+          <button class="mc-btn mc-continue hidden" id="continue-sniper" onclick="loadGame('sniper')">💾 Continue</button>
+        </div>
+      </div>
+      <div class="mode-card">
+        <h4>🔌 HORDE DEFENSE</h4>
+        <p>Zombies ignore you and swarm the generator in the middle of the map. It dies, you lose — so hold the line.</p>
+        <div class="mode-card-actions">
+          <button class="mc-btn mc-new" onclick="startGame('horde')">▶ New</button>
+          <button class="mc-btn mc-continue hidden" id="continue-horde" onclick="loadGame('horde')">💾 Continue</button>
+        </div>
+      </div>
+      <div class="mode-card" style="grid-column:1/-1;border-color:var(--red)">
+        <h4 style="color:var(--red)">👑 CAMPAIGN</h4>
+        <p>45 waves across 3 acts. The Harbinger rises at wave 20, then The Overlord — 1000 HP, volleys, slams and summons — at wave 45. Beat it to see the credits.</p>
+        <div class="mode-card-actions">
+          <button class="mc-btn mc-new" onclick="startGame('campaign')">▶ New</button>
+          <button class="mc-btn mc-continue hidden" id="continue-campaign" onclick="loadGame('campaign')">💾 Continue</button>
+        </div>
+      </div>
+      <div class="mode-card hidden" id="nightmareCard" style="grid-column:1/-1;border-color:var(--purple)">
+        <h4 style="color:var(--purple)">💀 NIGHTMARE</h4>
+        <p>Unlocked by beating Campaign. Endless waves, a mutator active every single wave, harder from the first zombie.</p>
+        <div class="mode-card-actions">
+          <button class="mc-btn mc-new" onclick="startGame('nightmare')">▶ New</button>
+          <button class="mc-btn mc-continue hidden" id="continue-nightmare" onclick="loadGame('nightmare')">💾 Continue</button>
+        </div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-gold" onclick="openStore()">🏪 STORE</button>
+      <button class="btn btn-purple" onclick="openSkills()">⚡ SKILLS</button>
+    </div>
+    <p class="help-line"><b>WASD</b> move · <b>Mouse</b> aim/shoot · <b>R</b> reload · <b>1-0</b> weapons · <b>Q E F C V Z X G B</b> use items · <b>Esc</b> pause</p>
+    <p style="margin-top:10px;font-size:11px;color:var(--muted)">Best Score: <span id="menuBest" style="color:var(--gold)">0</span></p>
+  </div>
+</div>
+
+<div class="overlay hidden" id="pauseOverlay">
+  <div class="overlay-box">
+    <h2 style="color:var(--blue)">⏸ PAUSED</h2>
+    <p style="margin:12px 0">Reload timers and power-up durations are frozen too.</p>
+    <div class="btn-row">
+      <button class="btn btn-green" onclick="resumeGame()">▶ RESUME</button>
+      <button class="btn btn-blue" onclick="saveGame()">💾 SAVE GAME</button>
+      <button class="btn btn-gold" onclick="openStore()">🏪 STORE</button>
+      <button class="btn btn-purple" onclick="openSkills()">⚡ SKILLS</button>
+      <button class="btn btn-red" onclick="backToMenu()">🏠 MENU</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="waveOverlay">
+  <div class="overlay-box">
+    <h2 id="waveCompleteTitle" style="color:var(--green)">WAVE COMPLETE!</h2>
+    <p id="waveCompleteMsg">Wave 1 cleared!</p>
+    <div class="stat-grid" id="waveStats"></div>
+    <p id="nextWaveInfo" style="font-size:12px"></p>
+    <div class="btn-row">
+      <button class="btn btn-green" onclick="nextWave()">⚔️ NEXT WAVE</button>
+      <button class="btn btn-blue" onclick="saveGame()">💾 SAVE</button>
+      <button class="btn btn-gold" onclick="openStore()">🏪 STORE</button>
+      <button class="btn btn-purple" onclick="openSkills()">⚡ SPEND SKILLS</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="gameOverOverlay">
+  <div class="overlay-box">
+    <h2 style="color:var(--red)">💀 GAME OVER</h2>
+    <p id="gameOverMsg">You were overwhelmed by the horde!</p>
+    <div class="stat-grid" id="goStats"></div>
+    <div class="btn-row">
+      <button class="btn btn-purple" id="rewardBtn" onclick="watchRewardedAd()">📺 WATCH AD: +100 🪙</button>
+      <button class="btn btn-green" onclick="restartGame()">🔄 TRY AGAIN</button>
+      <button class="btn btn-gold" onclick="openStore()">🏪 STORE</button>
+      <button class="btn btn-red" onclick="backToMenu()">🏠 MENU</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="levelUpOverlay">
+  <div class="overlay-box">
+    <h2 style="color:var(--gold)">⬆ LEVEL UP!</h2>
+    <p id="levelUpMsg">You reached Level 2!</p>
+    <p id="levelUpPts" style="margin-top:8px;color:var(--purple)">+1 Skill Point earned</p>
+    <div class="btn-row">
+      <button class="btn btn-green" onclick="closeLevelUp()">CONTINUE</button>
+      <button class="btn btn-purple" onclick="openSkills()">⚡ SPEND SKILLS</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="victoryOverlay">
+  <canvas id="victoryFx"></canvas>
+  <div class="overlay-box">
+    <h1 style="color:var(--gold)">👑 VICTORY!</h1>
+    <p style="margin:8px 0 4px">The Overlord has fallen. Zombie Survival — Campaign is complete.</p>
+    <div class="stat-grid" id="victoryStats"></div>
+    <div class="btn-row">
+      <button class="btn btn-gold" onclick="showCredits()">🎬 VIEW CREDITS</button>
+    </div>
+  </div>
+</div>
+
+<div id="creditsOverlay" class="hidden">
+  <button class="hud-btn" id="creditsSkip" onclick="closeCredits()">✕ SKIP</button>
+  <div id="creditsRoll">
+    <div class="c-title">🧟 ZOMBIE SURVIVAL</div>
+    <div class="c-sub">A QAZI GAMES PRODUCTION</div>
+
+    <div class="c-role">GAME DESIGN &amp; DEVELOPMENT</div>
+    <div class="c-name">Muhammad Khan & Claude AI</div>
+
+    <div class="c-role">PUBLISHER</div>
+    <div class="c-name">Qazi Games</div>
+
+    <div class="c-role">LEAD PROGRAMMING</div>
+    <div class="c-name">Muhammad Khan</div>
+
+    <div class="c-role">AI PAIR PROGRAMMER</div>
+    <div class="c-name">Claude AI, by Anthropic</div>
+
+    <div class="c-role">GAME BALANCE &amp; DIFFICULTY TUNING</div>
+    <div class="c-name">Muhammad Khan & Claude AI</div>
+
+    <div class="c-role">ENEMY &amp; BOSS DESIGN</div>
+    <div class="c-name">Muhammad Khan & Claude AI</div>
+
+    <div class="c-role">SOUND DESIGN</div>
+    <div class="c-name">Web Audio API — Procedural SFX</div>
+
+    <div class="c-role">VISUAL EFFECTS</div>
+    <div class="c-name">Hand-drawn Canvas Vector Art</div>
+
+    <div class="c-role">QUALITY TESTING</div>
+    <div class="c-name">Every Wave, Every Boss, Every Bug</div>
+
+    <div class="c-role">SPECIAL THANKS</div>
+    <div class="c-name">You, for surviving all 45 waves</div>
+
+    <div class="c-thanks">
+      Thanks for playing Zombie Survival.<br>
+      Made with grit, coffee, and a lot of debugging.<br>
+      More games at Qazi Games.<br><br>
+      🧟 THE END 🧟
+    </div>
+
+    <div class="btn-row" style="margin-top:60px;pointer-events:auto">
+      <button class="btn btn-green" onclick="playAgainFromCredits()">🔄 PLAY AGAIN</button>
+      <button class="btn btn-red" onclick="closeCredits()">🏠 MAIN MENU</button>
+    </div>
+  </div>
+</div>
+
+<div id="storeOverlay" class="hidden">
+  <div class="store-box">
+    <h2>🏪 WEAPON STORE</h2>
+    <p class="store-coins">Your Coins: <span id="store-coins-display">0</span> 🪙</p>
+    <div class="store-tabs">
+      <div class="store-tab active" onclick="switchStoreTab('weapons',this)">🔫 Weapons</div>
+      <div class="store-tab" onclick="switchStoreTab('powerups',this)">💊 Items</div>
+      <div class="store-tab" onclick="switchStoreTab('upgrades',this)">🔧 Upgrades</div>
+      <div class="store-tab" onclick="switchStoreTab('bestiary',this)">🧟 Bestiary</div>
+    </div>
+    <div class="store-grid" id="storeGrid"></div>
+    <div class="btn-row" style="margin-top:16px">
+      <button class="btn btn-red" onclick="closeStore()">✕ CLOSE</button>
+    </div>
+  </div>
+</div>
+
+<div id="skillsOverlay" class="hidden">
+  <div class="skills-box">
+    <h2>⚡ SKILL TREE</h2>
+    <p class="skill-points-info">Skill Points: <span id="skillPointsDisplay">0</span></p>
+    <div class="skills-grid" id="skillsGrid"></div>
+    <p class="help-line">Skill points are banked between runs and skill levels are permanent, so you can also spend them from the main menu.</p>
+    <div class="btn-row" style="margin-top:16px">
+      <button class="btn btn-red" onclick="closeSkills()">✕ CLOSE</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+'use strict';
+// ═══════════════════════════════════════════════════
+//  SOUND SYSTEM — Web Audio API (no files needed)
+// ═══════════════════════════════════════════════════
+let _actx = null;
+let _soundEnabled = true;
+let _voices = 0;               // FIX: cap concurrent voices. The minigun could
+                               // previously spawn hundreds of oscillators/sec.
+
+function _au(){
+  if(!_actx) _actx = new (window.AudioContext || window.webkitAudioContext)();
+  if(_actx.state === 'suspended') _actx.resume();
+  return _actx;
+}
+
+function SFX(type){
+  if(!_soundEnabled) return;
+  if(_voices > 24) return;
+  try{
+    const ac = _au();
+    const t = ac.currentTime;
+
+    function osc(freq, waveType, vol, duration, freqEnd, startDelay){
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.connect(g); g.connect(ac.destination);
+      o.type = waveType || 'sine';
+      const st = t + (startDelay || 0);
+      o.frequency.setValueAtTime(freq, st);
+      if(freqEnd !== undefined) o.frequency.exponentialRampToValueAtTime(Math.max(1,freqEnd), st + duration);
+      g.gain.setValueAtTime(vol, st);
+      g.gain.exponentialRampToValueAtTime(0.001, st + duration);
+      _voices++;
+      o.onended = ()=>{ _voices--; };
+      o.start(st); o.stop(st + duration + 0.01);
+    }
+
+    function noise(vol, duration, startDelay){
+      const bufSize = Math.max(1, Math.floor(ac.sampleRate * duration));
+      const buf = ac.createBuffer(1, bufSize, ac.sampleRate);
+      const data = buf.getChannelData(0);
+      for(let i=0;i<bufSize;i++) data[i] = Math.random()*2 - 1;
+      const src = ac.createBufferSource(); src.buffer = buf;
+      const g = ac.createGain(), filter = ac.createBiquadFilter();
+      filter.type = 'bandpass';
+      src.connect(filter); filter.connect(g); g.connect(ac.destination);
+      const st = t + (startDelay || 0);
+      g.gain.setValueAtTime(vol, st);
+      g.gain.exponentialRampToValueAtTime(0.001, st + duration);
+      _voices++;
+      src.onended = ()=>{ _voices--; };
+      src.start(st); src.stop(st + duration + 0.01);
+    }
+
+    switch(type){
+      case 'shoot_pistol':  noise(0.4,0.08); osc(200,'square',0.15,0.1,80); break;
+      case 'shoot_shotgun': noise(0.9,0.14); osc(120,'sawtooth',0.2,0.15,50); osc(80,'square',0.1,0.12,40,0.02); break;
+      case 'shoot_smg':     noise(0.25,0.05); osc(300,'square',0.08,0.05,150); break;
+      case 'shoot_sniper':  noise(0.6,0.06); osc(600,'sawtooth',0.3,0.08,100); osc(80,'sine',0.2,0.3,30); break;
+      case 'shoot_flamethrower': noise(0.3,0.18); osc(180,'sawtooth',0.1,0.18,140); break;
+      case 'shoot_grenade': osc(200,'sine',0.18,0.12,80); noise(0.2,0.08); break;
+      case 'shoot_laser':   osc(1200,'sine',0.12,0.08,800); osc(1600,'square',0.06,0.08,1000); break;
+      case 'shoot_rocket':  noise(0.5,0.2); osc(120,'sawtooth',0.25,0.2,60); break;
+      case 'shoot_minigun': noise(0.2,0.04); osc(350,'square',0.06,0.04,200); break;
+      case 'shoot_chainsaw':osc(90,'sawtooth',0.25,0.15,70); osc(130,'square',0.15,0.15,100); break;
+      case 'zombie_hit':    noise(0.35,0.06); osc(150,'square',0.12,0.06,80); break;
+      case 'zombie_die':    osc(180,'sawtooth',0.18,0.25,60); osc(120,'sine',0.1,0.3,50,0.05); noise(0.2,0.1); break;
+      case 'boss_die':      osc(220,'sawtooth',0.3,0.4,40); osc(160,'square',0.2,0.5,30,0.1); noise(0.5,0.3); osc(80,'sine',0.15,0.6,20,0.2); break;
+      case 'player_hit':    osc(200,'sawtooth',0.22,0.18,80); noise(0.3,0.1); break;
+      case 'player_die':    osc(300,'sawtooth',0.3,0.5,50); osc(200,'square',0.2,0.6,40,0.1); osc(120,'sine',0.15,0.8,30,0.25); noise(0.4,0.4); break;
+      case 'explosion':     noise(0.8,0.35); osc(80,'sawtooth',0.4,0.4,20); osc(120,'square',0.2,0.3,30,0.05); osc(50,'sine',0.3,0.5,20,0.1); break;
+      case 'reload':        osc(600,'sine',0.08,0.06); osc(900,'sine',0.08,0.06,undefined,0.08); osc(1200,'sine',0.1,0.08,undefined,0.18); break;
+      case 'collect_hp':    osc(440,'sine',0.14,0.08); osc(660,'sine',0.12,0.1,undefined,0.08); osc(880,'sine',0.1,0.1,undefined,0.18); break;
+      case 'collect_coin':  osc(880,'sine',0.12,0.06); osc(1100,'sine',0.1,0.08,undefined,0.06); break;
+      case 'collect_ammo':  osc(500,'square',0.08,0.06); osc(700,'square',0.06,0.06,undefined,0.07); break;
+      case 'powerup':       osc(440,'sine',0.12,0.1); osc(550,'sine',0.12,0.1,undefined,0.1); osc(660,'sine',0.12,0.1,undefined,0.2); osc(880,'sine',0.14,0.15,undefined,0.3); break;
+      case 'wave_start':    osc(220,'sawtooth',0.15,0.15); osc(330,'sawtooth',0.12,0.15,undefined,0.15); osc(440,'sawtooth',0.12,0.2,undefined,0.3); break;
+      case 'wave_complete': osc(523,'triangle',0.14,0.12); osc(659,'triangle',0.14,0.12,undefined,0.12); osc(784,'triangle',0.14,0.14,undefined,0.24); osc(1046,'triangle',0.16,0.2,undefined,0.38); break;
+      case 'level_up':      [523,659,784,1046,1318].forEach((f,i)=>osc(f,'triangle',0.14,0.14,undefined,i*0.1)); break;
+      case 'combo':         osc(660,'sine',0.1,0.07); osc(880,'sine',0.1,0.07,undefined,0.07); osc(1100,'sine',0.12,0.1,undefined,0.14); break;
+      case 'freeze':        osc(1200,'sine',0.12,0.3,800); osc(1000,'square',0.06,0.3,600,0.05); break;
+      case 'shield':        osc(440,'sine',0.1,0.12); osc(550,'sine',0.1,0.12,undefined,0.1); osc(660,'sine',0.12,0.18,undefined,0.2); break;
+      case 'nuke':          noise(1.0,0.5); osc(80,'sawtooth',0.5,0.6,20); osc(120,'square',0.3,0.5,30,0.1); osc(50,'sine',0.4,0.8,15,0.2); break;
+      case 'buy':           osc(880,'sine',0.1,0.07); osc(1100,'sine',0.1,0.09,undefined,0.07); break;
+      case 'error':         osc(200,'sawtooth',0.1,0.12,150); break;
+      case 'boss_spawn':    osc(100,'sawtooth',0.3,0.3); osc(80,'square',0.2,0.4,60,0.1); osc(60,'sine',0.2,0.5,40,0.25); noise(0.3,0.2,0.1); break;
+      case 'melee_hit':     noise(0.5,0.08); osc(100,'sawtooth',0.2,0.1,60); break;
+      // ── new sounds for the new enemies / events ──
+      case 'scream':        osc(900,'sawtooth',0.2,0.5,1600); osc(1400,'square',0.1,0.45,700,0.05); noise(0.2,0.3,0.1); break;
+      case 'charge':        osc(70,'sawtooth',0.28,0.45,180); noise(0.25,0.3,0.1); break;
+      case 'slam':          noise(0.9,0.4); osc(60,'sine',0.45,0.5,18); osc(90,'square',0.2,0.3,30,0.06); break;
+      case 'telegraph':     osc(300,'triangle',0.1,0.18,520); break;
+      case 'revive':        osc(180,'sine',0.14,0.3,420); osc(260,'triangle',0.1,0.3,600,0.08); break;
+      case 'gen_hit':       osc(320,'square',0.14,0.12,120); noise(0.25,0.08); break;
+      case 'mutator':       osc(160,'sawtooth',0.18,0.25,320); osc(240,'square',0.12,0.3,480,0.12); break;
+      case 'item_use':      osc(700,'triangle',0.12,0.09); osc(1000,'triangle',0.1,0.12,undefined,0.08); break;
+      case 'elite':         osc(520,'square',0.14,0.2,880); osc(780,'sine',0.1,0.25,1200,0.08); break;
+    }
+  }catch(e){ /* silent fail */ }
+}
+
+document.addEventListener('click', ()=>{ try{ _au(); }catch(e){} }, { once:true });
+document.addEventListener('touchstart', ()=>{ try{ _au(); }catch(e){} }, { once:true });
+
+// ═══════════════════════════════════════════════════
+//  GAMEMONETIZE SDK — safe wrapper around the official SDK loaded in <head>.
+//  Every call is guarded, so the game still runs if the SDK is blocked (ad
+//  blockers) or the file is opened outside GameMonetize.
+//
+//  The old cgPlayStart / cgPlayStop / cgHappy / cgMidgameAd function names are
+//  kept on purpose so none of the gameplay code that calls them had to change.
+//
+//  Ad placements:
+//    • Game over screen            (every death)
+//    • After every 5th wave        (boss waves, natural break)
+//    • "Watch Ad: +100 coins"      (player-initiated, reward granted afterwards)
+//  A cooldown stops ads from stacking back to back.
+// ═══════════════════════════════════════════════════
+const GM = { ready:false, muted:false, adPausedGame:false, onAdDone:null, lastAd:0 };
+const AD_COOLDOWN_MS = 45000;
+let _preAdSound = true;
+
+function gmSdkAvailable(){
+  try{ return (typeof sdk !== 'undefined') && sdk && typeof sdk.showBanner === 'function'; }
+  catch(e){ return false; }
+}
+
+
+// Called by SDK_OPTIONS.onEvent (see <head>).
+function gmEvent(a){
+  const name = a && a.name;
+  if(name === 'SDK_READY'){
+    GM.ready = true;
+  }
+  else if(name === 'SDK_GAME_PAUSE'){
+    // An ad is about to play: mute and freeze the game.
+    if(!GM.muted){ _preAdSound = _soundEnabled; _soundEnabled = false; GM.muted = true; }
+    if(gameRunning && !gamePaused){ setPaused(true); GM.adPausedGame = true; }
+  }
+  else if(name === 'SDK_GAME_START'){
+    // Ad finished (or none to show): restore sound and resume if we paused it.
+    if(GM.muted){ _soundEnabled = _preAdSound; GM.muted = false; }
+    if(GM.adPausedGame){
+      GM.adPausedGame = false;
+      if(gameRunning && !anyOverlayOpen()){ setPaused(false); lastFrameTs = 0; }
+    }
+    if(GM.onAdDone){
+      const f = GM.onAdDone; GM.onAdDone = null;
+      try{ f(); }catch(e){}
+    }
+  }
+}
+
+function gmShowAd(force){
+  const now = Date.now();
+  if(!force && now - GM.lastAd < AD_COOLDOWN_MS) return false;
+  if(!gmSdkAvailable()) return false;
+  try{ GM.lastAd = now; sdk.showBanner(); return true; }
+  catch(e){ return false; }
+}
+
+const CG = { ready:false, live:false };
+(async function initCrazyGames(){
+  try{
+        let tries = 0;
+    while((!window.CrazyGames || !window.CrazyGames.SDK) && tries < 50){
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+    
+    if(!window.CrazyGames || !window.CrazyGames.SDK) return;
+    
+        await window.CrazyGames.SDK.init();
+    window.CrazyGames.SDK.game.loadingStart();
+    const env = window.CrazyGames.SDK.environment;
+    CG.live = (env === 'crazygames' || env === 'local');
+    CG.ready = true;
+  }   catch(e){ CG.ready = false; console.error('CrazyGames init failed:', e); }
+  finally{ try{ if(window.CrazyGames && window.CrazyGames.SDK) window.CrazyGames.SDK.game.loadingStop(); }catch(e){} }
+})();
+function cg(fn){ if(CG.ready && CG.live){ try{ fn(); }catch(e){} } }
+function cgPlayStart(){ cg(()=>window.CrazyGames.SDK.game.gameplayStart()); }
+function cgPlayStop(){ cg(()=>window.CrazyGames.SDK.game.gameplayStop()); }
+function cgHappy(){ cg(()=>window.CrazyGames.SDK.game.happytime()); }
+function cgMidgameAd(){
+  cg(()=>window.CrazyGames.SDK.ad.requestAd('midgame', {
+    adStarted: ()=>{ _preAdSound = _soundEnabled; _soundEnabled = false; },
+    adFinished: ()=>{ _soundEnabled = _preAdSound; },
+    adError: ()=>{ _soundEnabled = _preAdSound; },
+  }));
+}
+
+// ═══════════════════════════════════════════════════
+//  CANVAS / VIEWPORT
+// ═══════════════════════════════════════════════════
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const mm = document.getElementById('minimap');
+const mctx = mm.getContext('2d');
+const hudEl = document.getElementById('hud');
+
+// FIX: the HUD wraps to two rows on narrow screens, but the old code hardcoded
+// 54px for both the canvas offset and the mouse Y offset, so aiming was wrong
+// (and part of the play area was hidden) on small windows. Measured now.
+let HUD_H = 54;
+function resizeCanvas(){
+  HUD_H = (hudEl && hudEl.offsetHeight) ? hudEl.offsetHeight : 54;
+  canvas.style.marginTop = HUD_H + 'px';
+  canvas.width  = Math.max(320, window.innerWidth);
+  canvas.height = Math.max(240, window.innerHeight - HUD_H);
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', ()=>setTimeout(resizeCanvas, 300));
+if(window.visualViewport) window.visualViewport.addEventListener('resize', resizeCanvas);
+
+// ═══════════════════════════════════════════════════
+//  PERSISTENT ACCOUNT DATA
+// ═══════════════════════════════════════════════════
+let saveData = {};
+try{ saveData = JSON.parse(localStorage.getItem('qzSave') || '{}') || {}; }catch(e){ saveData = {}; }
+saveData.coins       = saveData.coins || 0;
+saveData.owned       = Array.isArray(saveData.owned) ? saveData.owned : ['pistol'];
+if(!saveData.owned.includes('pistol')) saveData.owned.push('pistol');
+saveData.equipped    = saveData.equipped || 'pistol';
+saveData.upgrades    = saveData.upgrades || {};
+saveData.skills      = saveData.skills || {};
+saveData.skillPoints = saveData.skillPoints || 0;
+saveData.best        = saveData.best || 0;
+saveData.inventory   = saveData.inventory || {};   // NEW: consumables you actually own
+saveData.seen        = saveData.seen || {};        // NEW: bestiary unlocks
+function persist(){ try{ localStorage.setItem('qzSave', JSON.stringify(saveData)); }catch(e){} }
+
+// One in-progress save slot per mode.
+const VALID_MODES = ['survival','timeattack','bossrush','sniper','horde','campaign','nightmare'];
+function getStateKey(mode){ return 'qzGameState_' + mode; }
+function modeLabel(mode){
+  return { survival:'Survival', timeattack:'Time Attack', bossrush:'Boss Rush',
+           sniper:'Sniper Only', horde:'Horde Defense', campaign:'Campaign', nightmare:'Nightmare' }[mode] || mode;
+}
+// Wave numbers where a new Campaign act begins — shown as an extra banner line.
+const CAMPAIGN_ACTS = { 1:'ACT I — THE OUTBREAK', 16:'ACT II — THE SWARM', 31:'ACT III — DESCENT INTO HELL' };
+function updateNightmareUnlock(){
+  const c = document.getElementById('nightmareCard');
+  if(c) c.classList.toggle('hidden', !saveData.campaignBeaten);
+}
+
+// ═══════════════════════════════════════════════════
+//  CONTENT TABLES
+// ═══════════════════════════════════════════════════
+const WEAPONS = {
+  pistol:      { name:'PISTOL',       icon:'🔫', price:0,    dmg:25,  spd:400,  ammo:12,  reload:1500, spread:0.05, auto:false, color:'#00aaff', desc:'Reliable sidearm. Cheap to keep fed.' },
+  shotgun:     { name:'SHOTGUN',      icon:'💥', price:300,  dmg:18,  spd:600,  ammo:6,   reload:2000, spread:0.3,  auto:false, pellets:5, color:'#ff8800', desc:'5 pellets per shot. Close range beast.' },
+  smg:         { name:'SMG',          icon:'⚡', price:500,  dmg:15,  spd:120,  ammo:30,  reload:1800, spread:0.12, auto:true,  color:'#00ff88', desc:'Full auto. High fire rate.' },
+  sniper:      { name:'SNIPER',       icon:'🎯', price:800,  dmg:120, spd:1200, ammo:5,   reload:2500, spread:0.01, auto:false, pierce:true, color:'#aa44ff', desc:'Pierces every zombie in the line.' },
+  flamethrower:{ name:'FLAMETHROWER', icon:'🔥', price:1200, dmg:8,   spd:60,   ammo:100, reload:3000, spread:0.4,  auto:true,  isFlame:true, burn:true, color:'#ff4400', desc:'Sets zombies on fire. Burn damage over time.' },
+  grenade:     { name:'GRENADE',      icon:'💣', price:1500, dmg:80,  spd:500,  ammo:8,   reload:2500, spread:0.08, auto:false, isExplode:true, color:'#ffcc00', desc:'Explosive rounds. Area damage.' },
+  laser:       { name:'LASER GUN',    icon:'🔮', price:2000, dmg:40,  spd:110,  ammo:50,  reload:2000, spread:0,    auto:true,  isLaser:true, pierce:true, color:'#ff00ff', desc:'Hitscan beam that pierces. Ignores armour.' },
+  rocket:      { name:'ROCKET',       icon:'🚀', price:2500, dmg:150, spd:350,  ammo:4,   reload:3500, spread:0.02, auto:false, isExplode:true, bigExplode:true, color:'#ff6600', desc:'Massive explosion. Mind your own feet.' },
+  minigun:     { name:'MINIGUN',      icon:'🌀', price:3500, dmg:20,  spd:80,   ammo:200, reload:4000, spread:0.2,  auto:true,  color:'#00ffff', desc:'2000 RPM. Shreds everything.' },
+  chainsaw:    { name:'CHAINSAW',     icon:'⛓️', price:4000, dmg:60,  spd:140,  ammo:-1,  reload:0,    spread:0,    auto:true, isMelee:true, color:'#ff0000', desc:'Melee sweep, no ammo, ignores armour.' },
+};
+const WEAPON_IDS = Object.keys(WEAPONS);
+
+// FIX: these used to be written into saveData.upgrades and then silently thrown
+// away, so buying one outside a run was pure wasted money. They are real
+// inventory items now, each bound to a hotkey.
+const POWERUPS_STORE = [
+  { id:'healthpack', name:'HEALTH PACK', icon:'💊', key:'Q', price:100, desc:'Restore 50 HP instantly' },
+  { id:'shield',     name:'SHIELD',      icon:'🛡️', key:'E', price:200, desc:'30 sec invincibility' },
+  { id:'nuke',       name:'NUKE',        icon:'☢️', key:'F', price:500, desc:'Kill every zombie on the map' },
+  { id:'freeze',     name:'FREEZE',      icon:'❄️', key:'C', price:300, desc:'Freeze all zombies for 5 sec' },
+  { id:'vampire',    name:'VAMPIRE',     icon:'🧛', key:'V', price:400, desc:'Heal 5 HP per kill for 30 sec' },
+  { id:'slowmo',     name:'SLOW MOTION', icon:'⏱️', key:'Z', price:350, desc:'Slow time for 10 sec' },
+  { id:'magnet',     name:'MAGNET',      icon:'🧲', key:'X', price:150, desc:'Pull all drops to you for 30 sec' },
+  { id:'doubledmg',  name:'DOUBLE DMG',  icon:'💢', key:'G', price:250, desc:'2x damage for 20 sec' },
+  { id:'adrenaline', name:'ADRENALINE',  icon:'💉', key:'B', price:450, desc:'+50% fire rate and +30% move speed for 15 sec' },
+];
+const ITEM_BY_KEY = {}; POWERUPS_STORE.forEach(p=>{ ITEM_BY_KEY[p.key] = p.id; });
+
+const UPGRADES_STORE = [
+  { id:'maxhp',    name:'MAX HP +25',  icon:'❤️', price:400, desc:'Permanently increase max HP' },
+  { id:'speed',    name:'MOVE SPEED',  icon:'👟', price:300, desc:'Move 15% faster permanently' },
+  { id:'reload',   name:'FAST RELOAD', icon:'🔄', price:500, desc:'Reload 15% faster per level' },
+  { id:'damage',   name:'DAMAGE +10%', icon:'⚔️', price:600, desc:'All weapons deal 10% more damage' },
+  { id:'ammo',     name:'AMMO +25%',   icon:'📦', price:350, desc:'Increase all ammo capacity 25%' },
+  { id:'coinboost',name:'COIN BOOST',  icon:'🪙', price:800, desc:'Earn 50% more coins per kill' },
+  { id:'crit',     name:'CRIT CHANCE', icon:'🎯', price:700, desc:'+10% chance per level to land a x2 critical hit' },
+  { id:'regen',    name:'HP REGEN',    icon:'💚', price:450, desc:'Regenerate 1 HP per second per level (up to max HP)' },
+];
+const UPGRADE_MAX = 5;
+
+const SKILLS_DEF = [
+  { id:'fury',    name:'BERSERKER FURY', desc:'+2% damage per kill stack (max 10). Stacks reset when you get hit.', maxLvl:5 },
+  { id:'armor',   name:'IRON ARMOR',     desc:'Reduce all incoming damage by 5% per level',        maxLvl:5 },
+  { id:'vampire', name:'LIFE STEAL',     desc:'Heal 2 HP per kill per level',                      maxLvl:5 },
+  { id:'swift',   name:'SWIFT SHOOTER',  desc:'Fire rate +8% per level',                           maxLvl:5 },
+  { id:'lucky',   name:'LUCKY DROPS',    desc:'Drop rate and coins +15% per level',                 maxLvl:5 },
+  { id:'glass',   name:'GLASS CANNON',   desc:'+20% damage but -10% max HP per level',              maxLvl:3 },
+  { id:'tank',    name:'TANK MODE',      desc:'+15% max HP per level, -5% move speed',              maxLvl:3 },
+  { id:'ammoeff', name:'AMMO EFFICIENT', desc:'10% chance per level a shot costs no ammo',          maxLvl:5 },
+];
+
+// ═══════════════════════════════════════════════════
+//  ZOMBIES — 7 original types + new ones with real behaviour.
+//  ai: chase | flank | charge | support | ranged | sniper | spider
+// ═══════════════════════════════════════════════════
+// Difficulty pass: lower HP / HP-growth / speed-growth / damage across the board
+// so a beginner run doesn't get swamped as fast. Runner is specifically slowed
+// down per request (was the fastest common early threat).
+const ZOMBIE_TYPES = {
+  normal:      { label:'Shambler',    hp:42,  hpW:6,  spd:1.05, spdW:0.035,size:18, color:'#44cc44', xp:10,  coins:5,   score:100,  dmg:1, ai:'chase',  minWave:1,  desc:'Slow, dumb, endless. The bulk of every wave.' },
+  fast:        { label:'Runner',      hp:24,  hpW:4,  spd:2.05, spdW:0.06, size:14, color:'#ffaa00', xp:15,  coins:8,   score:150,  dmg:1, ai:'chase',  minWave:2,  desc:'Sprints straight at you. Kill it early.' },
+  dog:         { label:'Hell Hound',  hp:20,  hpW:4,  spd:2.70, spdW:0.08, size:12, color:'#cc8844', xp:12,  coins:6,   score:120,  dmg:1, ai:'chase',  minWave:3,  desc:'Fastest chaser in the game. Very fragile.' },
+  crawler:     { label:'Crawler',     hp:18,  hpW:3,  spd:2.40, spdW:0.09, size:9,  color:'#99dd66', xp:14,  coins:7,   score:140,  dmg:1, ai:'chase',  minWave:3,  desc:'Tiny hitbox, low to the ground, hard to hit.', crawler:true },
+  spitter:     { label:'Spitter',     hp:36,  hpW:7,  spd:1.30, spdW:0.02, size:16, color:'#88ff44', xp:20,  coins:10,  score:200,  dmg:1, ai:'ranged', minWave:4,  desc:'Keeps its distance and spits acid at you.', range:340, fireRate:2200 },
+  exploder:    { label:'Bloater',     hp:30,  hpW:6,  spd:1.60, spdW:0.06, size:16, color:'#ff4400', xp:20,  coins:10,  score:200,  dmg:1, ai:'chase',  minWave:4,  desc:'Detonates on death. Do not melee it.', explodes:true },
+  screamer:    { label:'Screamer',    hp:32,  hpW:6,  spd:1.40, spdW:0.04, size:16, color:'#ff66cc', xp:28,  coins:14,  score:280,  dmg:1, ai:'support',minWave:5,  desc:'Screams for reinforcements and speeds up the horde. Priority target.', screams:true },
+  splitter:    { label:'Splitter',    hp:50,  hpW:8,  spd:1.20, spdW:0.03, size:19, color:'#66ff66', xp:22,  coins:11,  score:220,  dmg:1, ai:'chase',  minWave:5,  desc:'Splits into two weaker Splitlings when killed.', splits:true },
+  splitling:   { label:'Splitling',   hp:12,  hpW:2,  spd:1.90, spdW:0.05, size:10, color:'#99ff99', xp:5,   coins:2,   score:50,   dmg:1, ai:'chase',  minWave:5,  desc:'A fragment left behind by a Splitter.' },
+  tank:        { label:'Brute Tank',  hp:140, hpW:20, spd:0.60, spdW:0.015,size:28, color:'#4444cc', xp:30,  coins:15,  score:300,  dmg:1, ai:'chase',  minWave:5,  desc:'Enormous health pool, painfully slow.' },
+  invisible:   { label:'Phantom',     hp:32,  hpW:6,  spd:1.50, spdW:0.04, size:16, color:'#8888ff', xp:25,  coins:12,  score:250,  dmg:1, ai:'flank',  minWave:6,  desc:'Almost invisible until it takes damage.', invisible:true },
+  armored:     { label:'Riot Zombie', hp:105, hpW:15, spd:0.95, spdW:0.03, size:20, color:'#8899aa', xp:35,  coins:18,  score:350,  dmg:1, ai:'chase',  minWave:6,  desc:'Riot shield: 70% less damage from the front. Flank it or use explosives.', armorFront:true },
+  sniperz:     { label:'Sniper Zombie',hp:46, hpW:8,  spd:0.90, spdW:0.02, size:17, color:'#33ff99', xp:32,  coins:16,  score:320,  dmg:2, ai:'sniper', minWave:6,  desc:'Keeps way back and lines up a slow, telegraphed, high-damage shot. Close the gap or take cover.', range:620, fireRate:3200 },
+  spider:      { label:'Spider Zombie',hp:26, hpW:4,  spd:2.20, spdW:0.05, size:14, color:'#442266', xp:22,  coins:10,  score:220,  dmg:1, ai:'spider', minWave:6,  desc:'Skitters in erratic bursts and crawls straight over cover.', climbsWalls:true },
+  flanker:     { label:'Stalker',     hp:42,  hpW:7,  spd:1.70, spdW:0.06, size:15, color:'#dd44aa', xp:26,  coins:13,  score:260,  dmg:1, ai:'flank',  minWave:7,  desc:'Circles wide and hits you from behind instead of charging.' },
+  necromancer: { label:'Necromancer', hp:84,  hpW:14, spd:1.10, spdW:0.03, size:19, color:'#aa44ff', xp:45,  coins:25,  score:500,  dmg:1, ai:'support',minWave:8,  desc:'Heals nearby zombies and raises corpses. Kill it or the wave never ends.', necro:true },
+  brute:       { label:'Charger',     hp:180, hpW:28, spd:0.85, spdW:0.02, size:26, color:'#cc5522', xp:60,  coins:30,  score:700,  dmg:2, ai:'charge', minWave:9,  desc:'Winds up, then charges in a straight line. Sidestep it.' },
+  boss:        { label:'Abomination', hp:650, hpW:130,spd:0.85, spdW:0.035,size:42, color:'#ff0044', xp:200, coins:100, score:2000, dmg:2, ai:'chase',  minWave:5,  desc:'Three phases: chase, enrage + summons, then ground slams and bullet sprays.', isBoss:true },
+  harbinger:   { label:'The Harbinger',hp:850,hpW:0,  spd:0.95, spdW:0,    size:46, color:'#8844ff', xp:260, coins:130, score:2800, dmg:2, ai:'chase',  minWave:20, desc:'A mid-campaign horror that shows up once, at wave 20. Three phases of its own, faster and angrier than an Abomination.', isBoss:true },
+  overlord:    { label:'The Overlord',hp:1000,hpW:0,  spd:0.75, spdW:0,    size:52, color:'#ff0044', xp:0,   coins:0,   score:5000, dmg:2, ai:'chase',  minWave:45, desc:'The final boss. Hurls volleys, slams the ground, and summons the horde in its last phase.', isBoss:true },
+};
+const SPAWNABLE = Object.keys(ZOMBIE_TYPES).filter(k=>k!=='boss' && k!=='harbinger' && k!=='overlord' && k!=='splitling');
+
+// ═══════════════════════════════════════════════════
+//  WAVE MUTATORS — rolled from wave 3, announced in the banner.
+// ═══════════════════════════════════════════════════
+const MUTATORS = {
+  speed:     { name:'SPEED DEMONS', icon:'💨', desc:'Zombies move 20% faster',            spdMult:1.2 },
+  iron:      { name:'IRONHIDE',     icon:'🛡️', desc:'Zombies have 30% more health',       hpMult:1.3 },
+  swarm:     { name:'SWARM',        icon:'🐜', desc:'50% more zombies, less health each',countMult:1.5, hpMult:0.55 },
+  gold:      { name:'GOLD RUSH',    icon:'💰', desc:'Triple coins from every kill',       coinMult:3 },
+  explosive: { name:'VOLATILE',     icon:'💥', desc:'Every zombie explodes when it dies', allExplode:true },
+  glass:     { name:'GLASS BONES',  icon:'🦴', desc:'Zombies die instantly — but you take more damage', hpMult:0.12, playerDmgMult:1.4 },
+  fog:       { name:'THICK FOG',    icon:'🌫️', desc:'Heavy fog, you can barely see them coming', fog:true },
+  dark:      { name:'BLACKOUT',     icon:'🔌', desc:'Lights out. You only see your flashlight cone', dark:true },
+};
+const MUTATOR_KEYS = Object.keys(MUTATORS);
+// Easier: mutators roll less often, and only from wave 4 on instead of wave 3.
+
+
+// ═══════════════════════════════════════════════════
+//  RUNTIME STATE
+// ═══════════════════════════════════════════════════
+let G = {};
+let gameRunning = false, gamePaused = false, gameMode = 'survival';
+const keys = {};
+let mousePos = {x:0,y:0}, mouseDown = false;
+let joystickActive = false, joystickDir = {x:0,y:0};
+let currentStoreTab = 'weapons';
+let animId = 0, shakeAmt = 0, explodeDepth = 0;
+let lastFrameTs = 0;
+
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+function rnd(a,b){ return a + Math.random()*(b-a); }
+function dist2(ax,ay,bx,by){ const dx=ax-bx, dy=ay-by; return dx*dx+dy*dy; }
+function mut(){ return G.mutator ? MUTATORS[G.mutator] : null; }
+function mutVal(field, dflt){ const m = mut(); return (m && m[field] !== undefined) ? m[field] : dflt; }
+
+// Effective outgoing damage, computed in ONE place.
+// FIX: Berserker Fury used to be applied twice (once baked into G.dmgMult inside
+// killZombie with a nonsense cap formula, and again inside shoot()), so damage
+// silently drifted upward. Now there is a single stack counter, capped at 10,
+// that resets when you take a hit — which is what the skill description says.
+function furyMult(){
+  const lvl = G.skills.fury || 0;
+  if(!lvl) return 1;
+  return 1 + Math.min(G.furyStacks||0, 10) * 0.02 * lvl;
+}
+function damageMult(){
+  return G.baseDmgMult * furyMult() * (G.doubleDmg ? 2 : 1);
+}
+function fireRateMult(){ return (1 / (1 + (G.skills.swift||0)*0.08)) * (G.adrenaline ? 0.667 : 1); }
+
+function ammoCapFor(id){
+  const w = WEAPONS[id];
+  if(!w || w.ammo === -1) return -1;
+  return Math.max(1, Math.floor(w.ammo * (1 + (saveData.upgrades.ammo||0)*0.25)));
+}
+
+function initGame(){
+  const skills = Object.assign({}, saveData.skills);
+  const glass = skills.glass || 0, tank = skills.tank || 0;
+  let maxHp = (130 + (saveData.upgrades.maxhp||0)*25) * (1 - glass*0.10) * (1 + tank*0.15);
+  maxHp = Math.max(30, Math.round(maxHp));
+  const startWeapon = (gameMode === 'sniper') ? 'sniper'
+                    : (WEAPONS[saveData.equipped] && saveData.owned.includes(saveData.equipped) ? saveData.equipped : 'pistol');
+
+  G = {
+    px:0, py:0, pAngle:0, walkPhase:0,
+    hp:maxHp, maxHp:maxHp,
+    speed: (2.8 + (saveData.upgrades.speed||0)*0.42) * (1 - tank*0.05),
+    score:0, kills:0, coins:0, lives:4,
+    wave:1, xp:0, xpNext:100, level:1,
+    weapon:startWeapon,
+    ammo:ammoCapFor(startWeapon), maxAmmo:ammoCapFor(startWeapon),
+    reloading:false, reloadEnd:0, lastShot:0,
+    baseDmgMult: (1 + (saveData.upgrades.damage||0)*0.1) * (1 + glass*0.20),
+    furyStacks:0,
+    shieldEnd:0, frozenEnd:0, vampireEnd:0, slowmoEnd:0, magnetEnd:0, doubleDmgEnd:0, adrenalineEnd:0,
+    shielded:false, frozen:false, vampireActive:false, slowmo:false, magnetActive:false, doubleDmg:false, adrenaline:false,
+    coinBoost: 1 + (saveData.upgrades.coinboost||0)*0.5,
+    regenTimer:0,
+    zombies:[], bullets:[], particles:[], drops:[], explosions:[], floats:[], corpses:[], shockwaves:[], decals:[],
+    camX:0, camY:0, worldW:2400, worldH:2400, obstacles:[],
+    waveActive:false, waveZombiesLeft:0, waveKillsThisWave:0,
+    waveSpawnTimer:0, waveSpawnInterval:1500,
+    combo:0, comboTimer:0,
+    mode:gameMode, mutator:null,
+    timeAttackLeft:75,
+    totalShots:0, totalHits:0,
+    skills:skills,
+    generator:null,
+    elapsed:0,
+  };
+  G.px = G.worldW/2; G.py = G.worldH/2;
+
+  // Obstacles now block movement and bullets, so keep a clear ring around spawn
+  // and never overlap another block.
+  let tries = 0;
+  while(G.obstacles.length < 34 && tries < 500){
+    tries++;
+    const w = rnd(46,120), h = rnd(46,120);
+    const x = rnd(60, G.worldW - 60 - w), y = rnd(60, G.worldH - 60 - h);
+    const cx = x + w/2, cy = y + h/2;
+    if(dist2(cx, cy, G.px, G.py) < 300*300) continue;
+    if(G.obstacles.some(o => x < o.x+o.w+30 && x+w > o.x-30 && y < o.y+o.h+30 && y+h > o.y-30)) continue;
+    G.obstacles.push({ x, y, w, h, color:`hsl(${200+Math.random()*60},28%,${9+Math.random()*7}%)` });
+  }
+
+  if(gameMode === 'horde'){
+    G.generator = { x:G.worldW/2, y:G.worldH/2, hp:1500, maxHp:1500, r:46, hitFlash:0 };
+    G.px = G.worldW/2 + 140; G.py = G.worldH/2;
+  }
+  startWave();
+}
+
+function rollMutator(){
+  if(gameMode === 'nightmare'){
+    if(G.wave < 2) return null;
+    if(Math.random() > 0.95) return null;         // near-guaranteed, from wave 2 on
+    return MUTATOR_KEYS[Math.floor(Math.random()*MUTATOR_KEYS.length)];
+  }
+  if(G.wave < 4) return null;
+  if(gameMode === 'campaign' && G.wave >= 45) return null;
+  if(Math.random() > 0.35) return null;
+  return MUTATOR_KEYS[Math.floor(Math.random()*MUTATOR_KEYS.length)];
+}
+
+function startWave(){
+  G.waveActive = true;
+  G.waveKillsThisWave = 0;
+  G.waveSpawnTimer = 0;
+  G.mutator = rollMutator();
+
+  let count;
+  if(gameMode === 'campaign' && G.wave === 45) count = 1;
+  else if(gameMode === 'bossrush')      count = Math.max(1, Math.round(G.wave*0.7));
+  else if(gameMode === 'sniper')   count = 3 + Math.round(G.wave*1.3);
+  else if(gameMode === 'horde')    count = 6 + Math.round(G.wave*3.4);
+  else if(gameMode === 'timeattack') count = 8 + Math.round(G.wave*2.6);
+  else                             count = 4 + Math.round(G.wave*2);
+  if(!(gameMode === 'campaign' && G.wave === 45)) count = Math.round(count * mutVal('countMult',1));
+
+  G.waveZombiesLeft = count;
+  // Spawns trickle in a bit slower and the interval bottoms out higher, giving
+  // more breathing room between kills, especially in the later waves.
+  G.waveSpawnInterval = Math.max(420, (gameMode==='horde'?1400:2100) - G.wave*60) / mutVal('countMult',1);
+
+  const isFinalBossWave = (gameMode === 'campaign' && G.wave === 45);
+  const isBossWave = isFinalBossWave || (gameMode === 'bossrush') || (G.wave % 5 === 0);
+  if(isBossWave) SFX('boss_spawn'); else SFX('wave_start');
+  if(G.mutator) setTimeout(()=>SFX('mutator'), 400);
+
+  const m = mut();
+  const actTag = (gameMode === 'campaign' && CAMPAIGN_ACTS[G.wave])
+    ? `<span style="color:#aa44ff">${CAMPAIGN_ACTS[G.wave]}</span><br>` : '';
+  const sub = actTag + (isFinalBossWave ? '⚠ THE OVERLORD HAS AWOKEN'
+              : (gameMode === 'campaign' && G.wave === 20 ? '⚠ THE HARBINGER APPROACHES'
+              : (isBossWave ? '⚠ BOSS INCOMING' : `${count} ZOMBIES`)) +
+              (m ? `<br><span style="color:#ffcc00">${m.icon} ${m.name}</span> — ${m.desc}` : ''));
+  showWaveBanner(isFinalBossWave ? 'FINAL WAVE' : `WAVE ${G.wave}`, sub);
+  updateMutatorHud();
+}
+
+function updateMutatorHud(){
+  const box = document.getElementById('hud-mutator');
+  const m = mut();
+  if(m){ box.classList.remove('hidden'); document.getElementById('mutator-val').textContent = m.icon + ' ' + m.name; }
+  else box.classList.add('hidden');
+}
+
+function showWaveBanner(line1, line2){
+  const b = document.getElementById('waveBanner');
+  b.innerHTML = line1 + (line2 ? `<br><span style="font-size:0.42em;color:#ff8800">${line2}</span>` : '');
+  b.classList.add('show');
+  clearTimeout(showWaveBanner._t);
+  showWaveBanner._t = setTimeout(()=>b.classList.remove('show'), 2600);
+}
+
+function pickZombieType(){
+  if(gameMode === 'bossrush') return 'boss';
+  const pool = SPAWNABLE.filter(k => ZOMBIE_TYPES[k].minWave <= G.wave);
+  if(!pool.length) return 'normal';
+  // Bias toward the newest unlocked types so later waves actually feel different.
+  const weighted = [];
+  pool.forEach(k=>{
+    const mw = ZOMBIE_TYPES[k].minWave;
+    const w = 1 + Math.max(0, 4 - (G.wave - mw)) * 0.6;
+    for(let i=0;i<Math.ceil(w*2);i++) weighted.push(k);
+  });
+  return weighted[Math.floor(Math.random()*weighted.length)];
+}
+
+function spawnZombie(forceType, atX, atY){
+  const isBossWave = (gameMode === 'bossrush') || (G.wave % 5 === 0);
+  let type = forceType;
+  if(!type){
+    if(G.waveZombiesLeft <= 0) return;
+    G.waveZombiesLeft--;
+    if(gameMode === 'campaign' && G.wave === 45) type = 'overlord';
+    else if(gameMode === 'campaign' && G.wave === 20 && isBossWave && G.waveZombiesLeft === 0) type = 'harbinger';
+    else type = (isBossWave && (gameMode === 'bossrush' || G.waveZombiesLeft === 0)) ? 'boss' : pickZombieType();
+  }
+  const cfg = ZOMBIE_TYPES[type] || ZOMBIE_TYPES.normal;
+
+  let sx, sy;
+  if(atX !== undefined){ sx = atX; sy = atY; }
+  else {
+    // FIX: spawn ring is now clamped inside the world, so zombies no longer
+    // materialise outside the arena and take ages to shuffle in.
+    const angle = Math.random()*Math.PI*2;
+    const d = Math.max(canvas.width, canvas.height)*0.62 + 120;
+    sx = clamp(G.px + Math.cos(angle)*d, 30, G.worldW-30);
+    sy = clamp(G.py + Math.sin(angle)*d, 30, G.worldH-30);
+  }
+
+  const elite = !cfg.isBoss && G.wave >= 4 && Math.random() < 0.09;
+  const hpMult = mutVal('hpMult',1) * (elite ? 2.4 : 1);
+  const hp = type === 'overlord' ? cfg.hp : Math.max(1, Math.round((cfg.hp + cfg.hpW*G.wave) * hpMult));
+
+  const z = {
+    type, label:cfg.label, x:sx, y:sy,
+    hp, maxHp:hp,
+    spd: (cfg.spd + cfg.spdW*G.wave) * mutVal('spdMult',1) * (elite?1.1:1),
+    size: cfg.size * (elite?1.18:1),
+    color: cfg.color,
+    xp: Math.round(cfg.xp * (elite?2:1)),
+    coins: Math.round(cfg.coins * (elite?3:1)),
+    score: Math.round(cfg.score * (elite?2.5:1)),
+    dmg: cfg.dmg, ai: cfg.ai,
+    isBoss: !!cfg.isBoss, elite,
+    explodes: !!cfg.explodes, armorFront: !!cfg.armorFront, invisible: !!cfg.invisible,
+    crawler: !!cfg.crawler, screams: !!cfg.screams, necro: !!cfg.necro,
+    range: cfg.range || 0, fireRate: cfg.fireRate || 2200,
+    angle:0, hitFlash:0, dead:false, walkPhase:Math.random()*10,
+    opacity: cfg.invisible ? 0.16 : 1,
+    lastShot:0, lastAbility:0, cd:0,
+    phase:1, chargeState:0, chargeT:0, chargeVx:0, chargeVy:0,
+    flankSide: Math.random()<0.5 ? 1 : -1, flankT: rnd(0,6),
+    burn:0, burnTick:0, slowT:0, buffT:0,
+    telegraphT:0, climbsWalls: !!cfg.climbsWalls, splits: !!cfg.splits,
+  };
+  if(elite){ z.color = '#ffd24d'; SFX('elite'); }
+  if(!saveData.seen[type]){ saveData.seen[type] = 1; persist(); }
+  G.zombies.push(z);
+  return z;
+}
+
+const SHOOT_SFX = { pistol:'shoot_pistol', shotgun:'shoot_shotgun', smg:'shoot_smg', sniper:'shoot_sniper',
+  flamethrower:'shoot_flamethrower', grenade:'shoot_grenade', laser:'shoot_laser', rocket:'shoot_rocket',
+  minigun:'shoot_minigun', chainsaw:'shoot_chainsaw' };
+
+function shoot(){
+  if(!gameRunning || gamePaused) return;
+  const now = performance.now();
+  const w = WEAPONS[G.weapon];
+  if(!w) return;
+  if(G.reloading) return;
+  if(now - G.lastShot < w.spd * fireRateMult()) return;
+  if(w.isMelee){ G.lastShot = now; meleeAttack(); return; }
+  if(G.ammo === 0){ startReload(); return; }
+    hideTutorial();
+
+  G.lastShot = now;
+  const pellets = w.pellets || 1;
+  // FIX: accuracy could exceed 100% because totalShots counted one trigger pull
+  // while every pellet counted as a hit. Shots now counts projectiles fired,
+  // and only projectile impacts count as hits (melee/splash no longer inflate it).
+  G.totalShots += pellets;
+
+  SFX(SHOOT_SFX[G.weapon] || 'shoot_pistol');
+
+  const eff = G.skills.ammoeff || 0;
+  const free = eff > 0 && Math.random() < eff*0.1;
+  if(G.ammo > 0 && !free) G.ammo--;
+
+  const critLvl = saveData.upgrades.crit||0;
+  const isCrit = critLvl>0 && Math.random() < critLvl*0.1;
+  const dmg = w.dmg * damageMult() * (isCrit?2:1);
+  const speedFactor = G.slowmo ? 0.45 : 1;
+  const bSpd = w.isLaser ? 34 : (w.isFlame ? 9 : 13);
+  for(let p=0;p<pellets;p++){
+    const a = G.pAngle + (Math.random()-0.5)*w.spread*2;
+    G.bullets.push({
+      x:G.px + Math.cos(G.pAngle)*22, y:G.py + Math.sin(G.pAngle)*22,
+      vx:Math.cos(a)*bSpd*speedFactor, vy:Math.sin(a)*bSpd*speedFactor,
+      dmg, color:isCrit?'#ffee00':w.color, isFlame:!!w.isFlame, isExplode:!!w.isExplode, bigExplode:!!w.bigExplode,
+      isLaser:!!w.isLaser, pierce:!!w.pierce, burn:!!w.burn, ignoreArmor:!!w.isLaser,
+      life: w.isFlame ? 26 : 78, size: w.isFlame ? 6 : (w.isLaser ? 3 : 4),
+      hitList:null, crit:isCrit,
+    });
+  }
+  // Muzzle flash + recoil kick
+  spawnParticles(G.px + Math.cos(G.pAngle)*24, G.py + Math.sin(G.pAngle)*24, w.color, w.isFlame?2:4, 3.5);
+  screenShake(w.bigExplode ? 7 : (w.pellets ? 5 : 2));
+  if(G.ammo === 0) startReload();
+}
+
+function meleeAttack(){
+  const range = 62;
+  let hitAny = false;
+  for(const z of G.zombies){
+    if(z.dead) continue;
+    const dx = z.x-G.px, dy = z.y-G.py;
+    const d = Math.hypot(dx,dy);
+    if(d > range + z.size) continue;
+    const da = Math.abs(normAngle(Math.atan2(dy,dx) - G.pAngle));
+    if(da > 1.2) continue;                       // 140-degree sweep, not a full circle
+    hitZombie(z, 60*damageMult(), G.pAngle, { ignoreArmor:true, countHit:false });
+    hitAny = true;
+  }
+  if(hitAny) SFX('melee_hit');
+  spawnParticles(G.px + Math.cos(G.pAngle)*30, G.py + Math.sin(G.pAngle)*30, '#ff3300', 6, 5);
+}
+
+function normAngle(a){ while(a > Math.PI) a -= Math.PI*2; while(a < -Math.PI) a += Math.PI*2; return a; }
+
+// FIX: reload used setTimeout, so it kept ticking while the game was paused, in
+// the store, or after death — you could pause to skip a 4s minigun reload.
+// It is a timestamp checked in the loop now, and pausing offsets it.
+function startReload(){
+  if(G.reloading || G.ammo === -1) return;
+  const w = WEAPONS[G.weapon];
+  if(!w || w.isMelee || G.ammo === G.maxAmmo) return;
+  G.reloading = true;
+  const lvl = saveData.upgrades.reload || 0;
+  G.reloadEnd = performance.now() + w.reload * Math.pow(0.85, lvl);
+  SFX('reload');
+}
+
+function hitZombie(z, dmg, fromAngle, opts){
+  if(z.dead) return;
+  opts = opts || {};
+  let final = dmg;
+  // Riot Zombie: the shield only covers the direction it is facing.
+  if(z.armorFront && !opts.ignoreArmor && fromAngle !== undefined){
+    const frontal = Math.abs(normAngle(fromAngle - (z.angle + Math.PI))) < 1.15;
+    if(frontal){
+      final *= 0.3;
+      spawnFloat(z.x, z.y - z.size, 'BLOCKED', '#8899aa', 13);
+      SFX('zombie_hit');
+      z.hp -= final; z.hitFlash = 6;
+      if(opts.countHit !== false) G.totalHits++;
+      if(z.hp <= 0) killZombie(z);
+      return;
+    }
+  }
+  z.hp -= final;
+  z.hitFlash = 8;
+  if(z.invisible) z.opacity = Math.min(1, z.opacity + 0.35);   // damage reveals Phantoms
+  if(opts.countHit !== false) G.totalHits++;
+  if(opts.burn) z.burn = Math.max(z.burn, 90);
+  SFX('zombie_hit');
+  spawnFloat(z.x, z.y - z.size*0.5, (opts.crit?'CRIT -':'-') + Math.round(final), opts.crit ? '#ffee00' : (z.elite ? '#ffd24d' : '#ff5566'), opts.crit?18:15);
+  if(z.hp <= 0) killZombie(z);
+}
+
+function killZombie(z){
+  if(z.dead) return;
+  z.dead = true;
+  G.kills++;
+  G.waveKillsThisWave++;
+
+  const lucky = 1 + (G.skills.lucky||0)*0.15;
+  const coins = Math.max(1, Math.round(z.coins * G.coinBoost * lucky * mutVal('coinMult',1)));
+  G.coins += coins;
+  saveData.coins += coins;
+  G.score += Math.round(z.score * (1 + G.combo*0.1));
+  G.xp += z.xp;
+  G.combo++; G.comboTimer = 180;
+  G.furyStacks = Math.min(10, (G.furyStacks||0) + 1);
+  if(G.combo > 1){ showCombo(G.combo); if(G.combo % 3 === 0) SFX('combo'); }
+
+  const heal = (G.vampireActive ? 5 : 0) + (G.skills.vampire||0)*2;
+  if(heal > 0) G.hp = Math.min(G.maxHp, G.hp + heal);
+
+  if(gameMode === 'timeattack') G.timeAttackLeft += 0.35;   // kills buy you time
+
+  if(Math.random() < 0.25*lucky) spawnDrop(z.x, z.y);
+  if(z.explodes || mutVal('allExplode',false)) createExplosion(z.x, z.y, z.isBoss?150:80, z.isBoss?70:45);
+  if(z.splits){
+    for(let i=0;i<2 && G.zombies.length < MAX_ZOMBIES;i++){
+      spawnZombie('splitling', z.x + rnd(-18,18), z.y + rnd(-18,18));
+    }
+    spawnFloat(z.x, z.y - z.size - 6, 'SPLIT!', '#66ff66', 14);
+  }
+
+  SFX(z.isBoss ? 'boss_die' : 'zombie_die');
+  if(z.isBoss) cgHappy();
+  spawnParticles(z.x, z.y, z.color, z.isBoss?26:11, z.isBoss?9:5);
+  if(G.decals.length < 90) G.decals.push({ x:z.x, y:z.y, r:z.size*rnd(0.7,1.2), a:0.32 });
+  // Corpses can be raised by a Necromancer, so remember them for a while.
+  if(!z.isBoss && G.corpses.length < 40) G.corpses.push({ x:z.x, y:z.y, type:z.type, life:900 });
+  spawnFloat(z.x, z.y - z.size - 10, '+' + coins + '🪙', '#ffcc00', 14);
+  if(z.isBoss) screenShake(16);
+
+  if(z.type === 'overlord' && gameMode === 'campaign'){
+    triggerVictory();
+    return;
+  }
+
+  checkXp();
+  persist();
+}
+
+function checkXp(){
+  // FIX: two level-ups in one kill used to fire two overlays on top of each
+  // other and only credit the last message. Now they are batched.
+  let gained = 0;
+  while(G.xp >= G.xpNext){
+    G.xp -= G.xpNext;
+    G.level++;
+    G.xpNext = Math.floor(G.xpNext * 1.4);
+    saveData.skillPoints = (saveData.skillPoints||0) + 1;
+    gained++;
+  }
+  if(gained > 0){
+    persist();
+    SFX('level_up');
+    cgHappy();
+    document.getElementById('levelUpMsg').textContent = `You reached Level ${G.level}!`;
+    document.getElementById('levelUpPts').textContent = `+${gained} Skill Point${gained>1?'s':''} earned`;
+    document.getElementById('levelUpOverlay').classList.remove('hidden');
+    setPaused(true);
+  }
+}
+
+// Pausing now shifts every absolute timestamp forward by the paused duration,
+// so reloads, shields and boss cooldowns genuinely freeze instead of expiring
+// while you sit in the store.
+let _pauseStart = 0;
+function setPaused(p){
+  if(p === gamePaused) return;
+  if(p){ _pauseStart = performance.now(); gamePaused = true; cgPlayStop(); }
+  else {
+    const d = performance.now() - _pauseStart;
+    gamePaused = false;
+    cgPlayStart();
+    if(gameRunning && G && G.zombies){
+      ['reloadEnd','shieldEnd','frozenEnd','vampireEnd','slowmoEnd','magnetEnd','doubleDmgEnd','adrenalineEnd','lastShot'].forEach(k=>{
+        if(G[k]) G[k] += d;
+      });
+      G.zombies.forEach(z=>{ if(z.lastShot) z.lastShot += d; if(z.lastAbility) z.lastAbility += d; });
+    }
+  }
+  document.getElementById('pauseBtn').classList.toggle('active', gamePaused);
+}
+
+function spawnDrop(x, y){
+  const types = ['hp','ammo','coin','coin','shield','freeze'];
+  G.drops.push({ x, y, type:types[Math.floor(Math.random()*types.length)], life:420, pulse:Math.random()*6 });
+}
+
+function collectDrop(d){
+  switch(d.type){
+    case 'hp':
+      G.hp = Math.min(G.maxHp, G.hp+30); SFX('collect_hp');
+      spawnFloat(d.x, d.y, '+30 HP', '#00ff88', 16); break;
+    case 'ammo': {
+      // FIX: picking up ammo with the chainsaw equipped produced Math.min(-1,...)
+      // and printed "-1" ammo forever. Melee/infinite weapons just skip it.
+      const w = WEAPONS[G.weapon];
+      if(!w || w.isMelee || G.maxAmmo === -1){
+        G.coins += 10; saveData.coins += 10; SFX('collect_coin');
+        spawnFloat(d.x, d.y, '+10🪙', '#ffcc00', 15);
+      } else {
+        G.ammo = Math.min(G.maxAmmo, G.ammo + Math.max(1, Math.floor(G.maxAmmo*0.35)));
+        if(G.ammo > 0 && G.reloading){ G.reloading = false; }
+        SFX('collect_ammo'); spawnFloat(d.x, d.y, '+AMMO', '#ff8800', 15);
+      }
+      break;
+    }
+    case 'coin':   G.coins += 20; saveData.coins += 20; SFX('collect_coin'); spawnFloat(d.x,d.y,'+20🪙','#ffcc00',15); persist(); break;
+    case 'shield': G.shielded = true; G.shieldEnd = performance.now()+6000; SFX('shield'); spawnFloat(d.x,d.y,'SHIELD!','#00aaff',16); break;
+    case 'freeze': freezeAll(5000); break;
+  }
+}
+
+function freezeAll(ms){
+  G.frozen = true; G.frozenEnd = performance.now() + ms;
+  SFX('freeze'); showWaveBanner('❄ FROZEN!', 'The horde is locked in place');
+}
+
+function createExplosion(x, y, radius, dmg){
+  G.explosions.push({ x, y, radius, life:20, maxLife:20 });
+  // FIX: a Bloater chain could recurse through killZombie -> createExplosion
+  // deep enough to blow the JS stack on dense waves. Depth is capped now.
+  if(explodeDepth > 4) return;
+  explodeDepth++;
+  const snapshot = G.zombies.slice();
+  for(const z of snapshot){
+    if(z.dead) continue;
+    const d = Math.hypot(z.x-x, z.y-y);
+    if(d < radius + z.size) hitZombie(z, dmg*(1 - d/(radius*1.6)), undefined, { ignoreArmor:true, countHit:false });
+  }
+  explodeDepth--;
+  if(Math.hypot(G.px-x, G.py-y) < radius*0.8) damagePlayer(Math.round(dmg*0.25));
+  SFX('explosion');
+  spawnParticles(x, y, '#ff6600', 18, 8);
+  screenShake(10);
+}
+
+function screenShake(a){ shakeAmt = Math.min(26, Math.max(shakeAmt, a)); }
+
+// Particles are capped and no longer use ctx.shadowBlur (see draw()) — that was
+// the single biggest framerate cost once the minigun got going.
+function spawnParticles(x, y, color, count, speed){
+  const room = 420 - G.particles.length;
+  if(room <= 0) return;
+  const n = Math.min(count, room);
+  for(let i=0;i<n;i++){
+    const a = Math.random()*Math.PI*2, s = Math.random()*speed;
+    G.particles.push({ x, y, vx:Math.cos(a)*s, vy:Math.sin(a)*s, life:26+Math.random()*18, maxLife:44, color, size:2+Math.random()*3 });
+  }
+}
+
+// FIX: damage numbers used to create a real DOM element per hit with a CSS
+// animation. A minigun burst created hundreds of nodes per second and tanked the
+// framerate; they were also positioned without the HUD offset so they floated in
+// the wrong place. They are plain canvas text in world space now.
+function spawnFloat(x, y, txt, color, size){
+  if(G.floats.length > 70) G.floats.shift();
+  G.floats.push({ x, y, txt, color, size:size||15, life:52, vy:-0.9 });
+}
+
+function showCombo(n){
+  const c = document.getElementById('combo');
+  c.textContent = `🔥 x${n} COMBO`;
+  c.classList.add('show');
+}
+
+function damagePlayer(dmg){
+  if(G.shielded || !gameRunning) return;
+  const armor = clamp((G.skills.armor||0)*0.05, 0, 0.5);
+  const taken = dmg * (1 - armor) * mutVal('playerDmgMult',1);
+  G.hp -= taken;
+  G.furyStacks = 0;                 // Berserker stacks reset on damage, as advertised
+  SFX('player_hit');
+  screenShake(6);
+  if(G.hp <= 0){
+    G.hp = 0;
+    if(G.lives > 1) loseLife();
+    else { G.lives = 0; gameOver('You were overwhelmed by the horde!'); }
+  }
+}
+
+function loseLife(){
+  G.lives--;
+  SFX('player_die');
+  G.hp = G.maxHp;
+  G.shielded = true;
+  G.shieldEnd = performance.now() + 2500;
+  G.furyStacks = 0;
+  screenShake(14);
+  // Push everything off you so you don't instantly lose the next life too.
+  G.zombies.forEach(z=>{
+    const d = Math.hypot(z.x-G.px, z.y-G.py) || 1;
+    if(d < 200){ z.x = G.px + (z.x-G.px)/d*260; z.y = G.py + (z.y-G.py)/d*260; }
+  });
+  showWaveBanner('💔 LIFE LOST!', `${G.lives} ${G.lives===1?'LIFE':'LIVES'} REMAINING`);
+}
+
+function damageGenerator(dmg){
+  const g = G.generator;
+  if(!g || !gameRunning) return;
+  g.hp -= dmg; g.hitFlash = 6;
+  if(Math.random() < 0.25) SFX('gen_hit');
+  if(g.hp <= 0){ g.hp = 0; gameOver('The generator was destroyed. The lights went out.'); }
+}
+
+// ═══════════════════════════════════════════════════
+//  COLLISION — the 40 scenery blocks used to be pure decoration; player,
+//  zombies and bullets all walked straight through them. Now they are solid.
+// ═══════════════════════════════════════════════════
+function resolveObstacles(e, r){
+  for(const o of G.obstacles){
+    const nx = clamp(e.x, o.x, o.x+o.w), ny = clamp(e.y, o.y, o.y+o.h);
+    const dx = e.x-nx, dy = e.y-ny;
+    const d = Math.hypot(dx,dy);
+    if(d >= r) continue;
+    if(d < 0.0001){
+      const left = e.x-o.x, right = o.x+o.w-e.x, top = e.y-o.y, bot = o.y+o.h-e.y;
+      const m = Math.min(left,right,top,bot);
+      if(m === left)       e.x = o.x - r;
+      else if(m === right) e.x = o.x + o.w + r;
+      else if(m === top)   e.y = o.y - r;
+      else                 e.y = o.y + o.h + r;
+    } else {
+      e.x = nx + dx/d*r; e.y = ny + dy/d*r;
+    }
+  }
+}
+function pointBlocked(x,y){
+  for(const o of G.obstacles){ if(x>o.x && x<o.x+o.w && y>o.y && y<o.y+o.h) return true; }
+  return false;
+}
+
+const MAX_ZOMBIES = 130;
+
+function updateZombie(z, now, dt){
+  // Horde Defense: the swarm is after the generator, not you.
+  let tx = G.px, ty = G.py, targetIsGen = false;
+  if(G.generator && G.generator.hp > 0){
+    const dGen = Math.hypot(G.generator.x-z.x, G.generator.y-z.y);
+    const dPly = Math.hypot(G.px-z.x, G.py-z.y);
+    if(dPly > 130 || dGen < 90){ tx = G.generator.x; ty = G.generator.y; targetIsGen = true; }
+  }
+
+  const dx = tx-z.x, dy = ty-z.y;
+  const d = Math.hypot(dx,dy) || 1;
+  z.angle = Math.atan2(dy,dx);
+  let spd = z.spd * (z.buffT>0 ? 1.45 : 1) * (z.slowT>0 ? 0.45 : 1);
+  if(z.buffT>0) z.buffT -= dt;
+  if(z.slowT>0) z.slowT -= dt;
+
+  let mvx = dx/d, mvy = dy/d, move = true;
+
+  switch(z.ai){
+    case 'flank': {
+      // Curve around the target instead of walking down the barrel.
+      z.flankT += dt*0.02;
+      if(d > 150){
+        const t = z.angle + z.flankSide * 0.85;
+        mvx = Math.cos(t); mvy = Math.sin(t);
+      }
+      break;
+    }
+    case 'ranged': {
+      if(d < z.range*0.55){ mvx = -mvx; mvy = -mvy; }            // back off
+      else if(d < z.range*0.9){ mvx = Math.cos(z.angle+1.4); mvy = Math.sin(z.angle+1.4); }
+      if(d < z.range && now - z.lastShot > z.fireRate){
+        z.lastShot = now;
+        const bs = 6.2;
+        G.bullets.push({ x:z.x, y:z.y, vx:(dx/d)*bs, vy:(dy/d)*bs, dmg:12, color:'#88ff44', life:90, size:5, isZombie:true, targetsGen:targetIsGen });
+      }
+      break;
+    }
+    case 'sniper': {
+      // Keeps maximum range, telegraphs a laser sight, then fires a heavy hitscan-ish shot.
+      if(d < z.range*0.7){ mvx = -mvx; mvy = -mvy; }
+      if(z.telegraphT > 0){
+        move = false;
+        z.telegraphT -= dt;
+        if(z.telegraphT <= 0){
+          z.lastShot = now;
+          const bs = 11;
+          G.bullets.push({ x:z.x, y:z.y, vx:(dx/d)*bs, vy:(dy/d)*bs, dmg:34, color:'#33ff99', life:130, size:5, isZombie:true, targetsGen:targetIsGen });
+          SFX('shoot_sniper');
+        }
+      } else if(d < z.range && now - z.lastShot > z.fireRate){
+        z.telegraphT = 60;
+        SFX('telegraph');
+      }
+      break;
+    }
+    case 'spider': {
+      // Erratic zigzag instead of a straight line.
+      z.flankT += dt*0.08;
+      const jitter = Math.sin(z.flankT*2.4) * 0.7;
+      const perp = z.angle + Math.PI/2;
+      mvx = Math.cos(z.angle) + Math.cos(perp)*jitter;
+      mvy = Math.sin(z.angle) + Math.sin(perp)*jitter;
+      const jn = Math.hypot(mvx,mvy) || 1; mvx /= jn; mvy /= jn;
+      break;
+    }
+    case 'charge': {
+      if(z.chargeState === 0){
+        if(d < 380 && now - z.lastAbility > 2600){ z.chargeState = 1; z.chargeT = 42; SFX('telegraph'); }
+      } else if(z.chargeState === 1){
+        move = false; z.chargeT -= dt;
+        if(z.chargeT <= 0){
+          z.chargeState = 2; z.chargeT = 40;
+          z.chargeVx = Math.cos(z.angle)*8.4; z.chargeVy = Math.sin(z.angle)*8.4;
+          SFX('charge');
+        }
+      } else if(z.chargeState === 2){
+        move = false; z.chargeT -= dt;
+        const before = { x:z.x, y:z.y };
+        z.x += z.chargeVx*dt; z.y += z.chargeVy*dt;
+        resolveObstacles(z, z.size);
+        if(Math.abs(z.x-before.x) < 0.5 && Math.abs(z.y-before.y) < 0.5) z.chargeT = 0;   // hit a wall
+        if(z.chargeT <= 0){ z.chargeState = 0; z.lastAbility = now; }
+      }
+      break;
+    }
+    case 'support': {
+      if(d < 240){ mvx = -mvx; mvy = -mvy; }                     // hang back behind the horde
+      if(z.screams && now - z.lastAbility > 9000 && d < 800){
+        z.lastAbility = now; SFX('scream');
+        spawnFloat(z.x, z.y - z.size - 12, 'SCREAM!', '#ff66cc', 17);
+        for(let i=0;i<3 && G.zombies.length < MAX_ZOMBIES;i++){
+          spawnZombie(Math.random()<0.5?'fast':'normal', z.x + rnd(-70,70), z.y + rnd(-70,70));
+        }
+        G.zombies.forEach(o=>{ if(o !== z && Math.hypot(o.x-z.x,o.y-z.y) < 420) o.buffT = 300; });
+        screenShake(5);
+      }
+      if(z.necro && now - z.lastAbility > 5200){
+        z.lastAbility = now;
+        let healed = 0;
+        G.zombies.forEach(o=>{
+          if(o !== z && !o.dead && o.hp < o.maxHp && Math.hypot(o.x-z.x,o.y-z.y) < 300){
+            o.hp = Math.min(o.maxHp, o.hp + o.maxHp*0.1); healed++;
+          }
+        });
+        let raised = 0;
+        for(let i=G.corpses.length-1; i>=0 && raised<2; i--){
+          const c = G.corpses[i];
+          if(Math.hypot(c.x-z.x, c.y-z.y) < 300 && G.zombies.length < MAX_ZOMBIES){
+            spawnZombie(c.type === 'boss' ? 'tank' : c.type, c.x, c.y);
+            G.corpses.splice(i,1); raised++;
+          }
+        }
+        if(healed || raised){ SFX('revive'); spawnFloat(z.x, z.y - z.size - 12, raised?'RISE!':'HEAL', '#aa44ff', 16); }
+      }
+      break;
+    }
+  }
+
+  if(z.isBoss) bossBrain(z, now, dt, d);
+
+  if(move && d > (targetIsGen ? G.generator.r + z.size - 4 : z.size)){
+    z.x += mvx*spd*dt; z.y += mvy*spd*dt;
+    z.walkPhase += spd*dt*0.3;
+    if(!z.climbsWalls) resolveObstacles(z, z.size*0.8);
+    z.x = clamp(z.x, 10, G.worldW-10); z.y = clamp(z.y, 10, G.worldH-10);
+  }
+
+  // Burn damage from the flamethrower
+  if(z.burn > 0){
+    z.burn -= dt;
+    z.burnTick -= dt;
+    if(z.burnTick <= 0){
+      z.burnTick = 18;
+      hitZombie(z, 6 * G.baseDmgMult, undefined, { ignoreArmor:true, countHit:false });
+      if(!z.dead) spawnParticles(z.x, z.y, '#ff6600', 1, 1.5);
+    }
+  }
+  if(z.hitFlash > 0) z.hitFlash--;
+
+  // Contact damage
+  if(targetIsGen){
+    if(Math.hypot(G.generator.x-z.x, G.generator.y-z.y) < G.generator.r + z.size + 4) damageGenerator(z.dmg*0.6*dt);
+  }
+  if(Math.hypot(G.px-z.x, G.py-z.y) < z.size + 20){
+    damagePlayer((z.chargeState === 2 ? z.dmg*2.2 : z.dmg) * dt);
+  }
+}
+
+function bossBrain(z, now, dt, d){
+  const frac = z.hp / z.maxHp;
+  const isOverlord = z.type === 'overlord';
+
+  // The Overlord throws ranged volleys from phase 1 onward, on top of the
+  // normal phase escalation below.
+  if(isOverlord && now - (z.lastRangedAtk||0) > 1700 && d < 950){
+    z.lastRangedAtk = now;
+    const baseAngle = Math.atan2(G.py-z.y, G.px-z.x);
+    const shots = z.phase >= 3 ? 5 : 3;
+    for(let i=0;i<shots;i++){
+      const a = baseAngle + (i - (shots-1)/2) * 0.14;
+      G.bullets.push({ x:z.x, y:z.y, vx:Math.cos(a)*6, vy:Math.sin(a)*6, dmg:16, color:'#ff0044', life:120, size:7, isZombie:true });
+    }
+    SFX('shoot_grenade');
+  }
+
+  if(frac < 0.66 && z.phase === 1){
+    z.phase = 2; z.spd *= 1.15; z.color = '#ff00ff';
+    SFX('boss_spawn'); showWaveBanner(isOverlord ? '👹 THE OVERLORD RISES' : '👹 PHASE 2', 'Enraged — now summoning minions');
+  } else if(frac < 0.33 && z.phase === 2){
+    z.phase = 3; z.spd *= 1.1; z.color = '#ff2200';
+    SFX('boss_spawn'); showWaveBanner(isOverlord ? '☠ LAST STAND' : '☠ PHASE 3', 'Ground slams and bullet sprays');
+  }
+  z.cd -= dt;
+  if(z.cd > 0) return;
+
+  if(z.slamT > 0){
+    z.slamT -= dt;
+    if(z.slamT <= 0){
+      G.shockwaves.push({ x:z.x, y:z.y, r:20, maxR: isOverlord ? 260 : 210, dmg: isOverlord ? 22 : 16, life:26, maxLife:26, hitPlayer:false });
+      SFX('slam'); screenShake(isOverlord ? 18 : 15);
+      spawnParticles(z.x, z.y, '#ff8800', 22, 9);
+    }
+    return;
+  }
+
+  if(z.phase >= 2 && Math.random() < 0.02*dt){
+    const roll = Math.random();
+    if(roll < 0.4){                              // telegraphed ground slam
+      z.slamT = 42; z.cd = 150; SFX('telegraph');
+    } else if(roll < 0.75 && G.zombies.length < MAX_ZOMBIES){   // summon
+      z.cd = 240; SFX('scream');
+      spawnFloat(z.x, z.y - z.size - 14, 'SUMMON!', '#ff44aa', 18);
+      const summonCount = isOverlord ? 5 : 3;
+      for(let i=0;i<summonCount;i++) spawnZombie(Math.random()<0.5?'fast':'crawler', z.x + rnd(-90,90), z.y + rnd(-90,90));
+    } else if(z.phase >= 3){                     // radial bullet spray
+      z.cd = 200;
+      const rays = isOverlord ? 18 : 14;
+      for(let i=0;i<rays;i++){
+        const a = (i/rays)*Math.PI*2 + Math.random()*0.2;
+        G.bullets.push({ x:z.x, y:z.y, vx:Math.cos(a)*5, vy:Math.sin(a)*5, dmg:10, color:'#ff2200', life:110, size:6, isZombie:true });
+      }
+      SFX('shoot_grenade');
+    }
+  }
+}
+
+// Light mutual repulsion so a wave doesn't collapse into a single pixel-thick
+// conga line stacked on one spot.
+function separateZombies(dt){
+  const list = G.zombies;
+  const n = list.length;
+  if(n > 90) return;                            // skip the O(n^2) pass on huge waves
+  for(let i=0;i<n;i++){
+    const a = list[i];
+    for(let j=i+1;j<n;j++){
+      const b = list[j];
+      const dx = b.x-a.x, dy = b.y-a.y;
+      const min = (a.size + b.size)*0.75;
+      const d2 = dx*dx + dy*dy;
+      if(d2 >= min*min || d2 < 0.01) continue;
+      const d = Math.sqrt(d2), push = (min-d)/d*0.4*dt;
+      a.x -= dx*push; a.y -= dy*push;
+      b.x += dx*push; b.y += dy*push;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  MAIN LOOP
+// ═══════════════════════════════════════════════════
+function gameLoop(ts){
+  if(!gameRunning) return;
+  animId = requestAnimationFrame(gameLoop);
+  const now = ts || performance.now();
+  if(gamePaused){ lastFrameTs = now; return; }
+
+  // Frame-rate independent step (capped so an alt-tab doesn't teleport the horde).
+  const raw = lastFrameTs ? (now - lastFrameTs) : 16.7;
+  lastFrameTs = now;
+  const dt = clamp(raw/16.667, 0.2, 2.5) * (G.slowmo ? 0.4 : 1);
+  G.elapsed += raw;
+
+  // Timed effects
+  if(G.reloading && now >= G.reloadEnd){ G.reloading = false; G.ammo = G.maxAmmo; }
+  if(G.shielded && now > G.shieldEnd) G.shielded = false;
+  if(G.frozen && now > G.frozenEnd) G.frozen = false;
+  if(G.vampireActive && now > G.vampireEnd) G.vampireActive = false;
+  if(G.slowmo && now > G.slowmoEnd) G.slowmo = false;
+  if(G.magnetActive && now > G.magnetEnd) G.magnetActive = false;
+  if(G.doubleDmg && now > G.doubleDmgEnd) G.doubleDmg = false;
+  if(G.adrenaline && now > G.adrenalineEnd) G.adrenaline = false;
+  if(G.comboTimer > 0) G.comboTimer -= dt;
+  else if(G.combo > 0){ G.combo = 0; document.getElementById('combo').classList.remove('show'); }
+
+  // HP Regen upgrade: ticks once per second, scaled by level, capped at max HP.
+  const regenLvl = saveData.upgrades.regen || 0;
+  if(regenLvl > 0 && G.hp > 0 && G.hp < G.maxHp){
+    G.regenTimer = (G.regenTimer || 0) + raw;
+    if(G.regenTimer >= 1000){
+      G.regenTimer -= 1000;
+      G.hp = Math.min(G.maxHp, G.hp + regenLvl);
+    }
+  }
+
+  // ── Movement ──
+  let mvx = 0, mvy = 0;
+  if(keys['arrowleft']||keys['a']) mvx = -1;
+  if(keys['arrowright']||keys['d']) mvx = 1;
+  if(keys['arrowup']||keys['w']) mvy = -1;
+  if(keys['arrowdown']||keys['s']) mvy = 1;
+  if(joystickActive){ mvx = joystickDir.x; mvy = joystickDir.y; }
+  const len = Math.hypot(mvx,mvy);
+  if(len > 0){
+    mvx /= len; mvy /= len;
+    const moveSpd = G.speed * (G.adrenaline ? 1.3 : 1);
+    G.px += mvx*moveSpd*dt; G.py += mvy*moveSpd*dt;
+    G.walkPhase += moveSpd*dt*0.3;
+    resolveObstacles(G, 15);
+  }
+  G.px = clamp(G.px, 18, G.worldW-18);
+  G.py = clamp(G.py, 18, G.worldH-18);
+
+  // Aim (mouse is already stored in canvas space)
+  G.pAngle = Math.atan2(mousePos.y + G.camY - G.py, mousePos.x + G.camX - G.px);
+
+  const w = WEAPONS[G.weapon];
+  if((mouseDown || mobileFire) && w && (w.auto || w.isMelee)) shoot();
+
+  // Camera + shake
+  const sh = shakeAmt > 0 ? (Math.random()-0.5)*shakeAmt : 0;
+  if(shakeAmt > 0) shakeAmt *= 0.86;
+  G.camX = clamp(G.px - canvas.width/2, -80, G.worldW - canvas.width + 80) + sh;
+  G.camY = clamp(G.py - canvas.height/2, -80, G.worldH - canvas.height + 80) + sh;
+
+  // ── Spawning ──
+  if(G.waveActive && G.waveZombiesLeft > 0 && G.zombies.length < MAX_ZOMBIES){
+    G.waveSpawnTimer += raw;
+    if(G.waveSpawnTimer >= G.waveSpawnInterval){ G.waveSpawnTimer = 0; spawnZombie(); }
+  }
+
+  // ── Zombies ──
+  G.zombies = G.zombies.filter(z=>!z.dead);
+  if(!G.frozen){
+    for(const z of G.zombies) if(!z.dead) updateZombie(z, now, dt);
+    separateZombies(dt);
+  } else {
+    for(const z of G.zombies){ if(z.hitFlash>0) z.hitFlash--; }
+  }
+
+  // ── Shockwaves (boss slam) ──
+  G.shockwaves = G.shockwaves.filter(s=>s.life>0);
+  for(const s of G.shockwaves){
+    s.life -= dt;
+    s.r = s.maxR * (1 - s.life/s.maxLife);
+    if(!s.hitPlayer){
+      const dp = Math.hypot(G.px-s.x, G.py-s.y);
+      if(dp < s.r + 18 && dp > s.r - 40){ s.hitPlayer = true; damagePlayer(s.dmg); }
+    }
+  }
+
+  // ── Bullets ──
+  for(const b of G.bullets){
+    if(b.life <= 0) continue;
+    b.x += b.vx*dt; b.y += b.vy*dt;
+    b.life -= dt;
+    if(b.x < 0 || b.y < 0 || b.x > G.worldW || b.y > G.worldH){ b.life = 0; continue; }
+    if(!b.isFlame && pointBlocked(b.x, b.y)){          // bullets stop at cover now
+      b.life = 0;
+      spawnParticles(b.x, b.y, b.color || '#888', 3, 2.2);
+      if(b.isExplode) createExplosion(b.x, b.y, b.bigExplode?120:70, b.dmg*0.7);
+      continue;
+    }
+    if(b.isZombie){
+      if(Math.hypot(b.x-G.px, b.y-G.py) < 20){ damagePlayer(b.dmg); b.life = 0; }
+      else if(G.generator && G.generator.hp>0 && Math.hypot(b.x-G.generator.x, b.y-G.generator.y) < G.generator.r){
+        damageGenerator(b.dmg); b.life = 0;
+      }
+      continue;
+    }
+    if(b.isFlame){ b.size += 0.35*dt; }
+    const fromAngle = Math.atan2(b.vy, b.vx);
+    for(const z of G.zombies){
+      if(z.dead || b.life <= 0) continue;
+      if(Math.hypot(b.x-z.x, b.y-z.y) >= z.size + b.size) continue;
+      if(b.pierce || b.isFlame){
+        b.hitList = b.hitList || [];
+        if(b.hitList.indexOf(z) !== -1) continue;      // pierce hits each target once
+        b.hitList.push(z);
+      }
+      hitZombie(z, b.dmg, fromAngle, { ignoreArmor:b.ignoreArmor, burn:b.burn, crit:b.crit });
+      if(b.isExplode){ createExplosion(b.x, b.y, b.bigExplode?120:70, b.dmg*0.7); b.life = 0; break; }
+      if(!b.pierce && !b.isFlame){ b.life = 0; break; }
+    }
+  }
+  G.bullets = G.bullets.filter(b=>b.life>0);
+  if(G.bullets.length > 400) G.bullets.splice(0, G.bullets.length-400);
+
+  // ── Explosions / drops / particles / floats / corpses / decals ──
+  G.explosions = G.explosions.filter(e=>e.life>0);
+  for(const e of G.explosions) e.life -= dt;
+  for(const d of G.drops){
+    d.life -= dt; d.pulse += 0.1*dt;
+    if(G.magnetActive){
+      const dx = G.px-d.x, dy = G.py-d.y, dd = Math.hypot(dx,dy);
+      if(dd > 1){ d.x += dx/dd*5*dt; d.y += dy/dd*5*dt; }   // FIX: guard divide-by-zero
+    }
+    if(Math.hypot(d.x-G.px, d.y-G.py) < 26){ collectDrop(d); d.life = 0; }
+  }
+  G.drops = G.drops.filter(d=>d.life>0);
+  for(const p of G.particles){ p.x += p.vx*dt; p.y += p.vy*dt; p.life -= dt; p.vx *= 0.93; p.vy *= 0.93; }
+  G.particles = G.particles.filter(p=>p.life>0);
+  for(const f of G.floats){ f.y += f.vy*dt; f.life -= dt; }
+  G.floats = G.floats.filter(f=>f.life>0);
+  for(const c of G.corpses) c.life -= dt;
+  G.corpses = G.corpses.filter(c=>c.life>0);
+  if(G.generator && G.generator.hitFlash>0) G.generator.hitFlash -= dt;
+
+  // ── Wave / mode rules ──
+  if(G.waveActive && G.waveZombiesLeft <= 0 && G.zombies.length === 0){
+    G.waveActive = false;
+    waveComplete();
+  }
+  if(gameMode === 'timeattack'){
+    G.timeAttackLeft -= (raw/1000);
+    if(G.timeAttackLeft <= 0){ G.timeAttackLeft = 0; gameOver('Time up! Final score locked in.'); return; }
+  }
+
+  draw();
+  updateHUD();
+}
+
+// ═══════════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════════
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.save();
+  ctx.translate(-G.camX, -G.camY);
+
+  // FIX: the floor used to redraw all ~1600 world tiles plus every obstacle and
+  // grid line each frame regardless of the camera. Everything is culled to the
+  // visible rectangle now.
+  const vx0 = G.camX, vy0 = G.camY, vx1 = G.camX + canvas.width, vy1 = G.camY + canvas.height;
+  drawFloor(vx0, vy0, vx1, vy1);
+
+  for(const d of G.decals){
+    if(d.x < vx0-40 || d.x > vx1+40 || d.y < vy0-40 || d.y > vy1+40) continue;
+    ctx.globalAlpha = d.a; ctx.fillStyle = '#3d0a12';
+    ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  for(const o of G.obstacles){
+    if(o.x > vx1 || o.x+o.w < vx0 || o.y > vy1 || o.y+o.h < vy0) continue;
+    ctx.fillStyle = o.color;
+    ctx.beginPath(); roundRect(o.x, o.y, o.w, o.h, 8); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1; ctx.stroke();
+  }
+
+  if(G.generator) drawGenerator();
+
+  for(const c of G.corpses){
+    ctx.globalAlpha = clamp(c.life/300, 0, 0.5);
+    ctx.fillStyle = '#2a2a35';
+    ctx.beginPath(); ctx.ellipse(c.x, c.y, 11, 6, 0, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  const DROP_COLORS = { hp:'#00ff88', ammo:'#ff8800', coin:'#ffcc00', shield:'#00aaff', freeze:'#88ddff' };
+  const DROP_ICONS  = { hp:'💊', ammo:'📦', coin:'🪙', shield:'🛡️', freeze:'❄️' };
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for(const d of G.drops){
+    const pulse = Math.sin(d.pulse)*3;
+    ctx.globalAlpha = clamp(d.life/60, 0, 1);
+    glowDot(d.x, d.y, 13+pulse, DROP_COLORS[d.type] || '#fff');
+    ctx.font = `${17+pulse/2}px serif`;
+    ctx.fillStyle = '#fff';
+    ctx.fillText(DROP_ICONS[d.type] || '?', d.x, d.y);
+  }
+  ctx.globalAlpha = 1;
+
+  for(const e of G.explosions){
+    const prog = e.life/e.maxLife;
+    ctx.globalAlpha = prog*0.75;
+    const g = ctx.createRadialGradient(e.x,e.y,0,e.x,e.y,e.radius);
+    g.addColorStop(0,'rgba(255,220,120,0.95)'); g.addColorStop(0.45,'rgba(255,90,0,0.6)'); g.addColorStop(1,'rgba(255,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(e.x, e.y, e.radius*(2-prog), 0, Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  for(const s of G.shockwaves){
+    ctx.globalAlpha = clamp(s.life/s.maxLife, 0, 1)*0.85;
+    ctx.strokeStyle = '#ff8800'; ctx.lineWidth = 7;
+    ctx.beginPath(); ctx.arc(s.x, s.y, Math.max(1,s.r), 0, Math.PI*2); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,180,0.6)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(s.x, s.y, Math.max(1,s.r*0.82), 0, Math.PI*2); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  for(const b of G.bullets){
+    if(b.isFlame){
+      ctx.globalAlpha = 0.65;
+      const g = ctx.createRadialGradient(b.x,b.y,0,b.x,b.y,b.size);
+      g.addColorStop(0,'rgba(255,220,80,0.95)'); g.addColorStop(1,'rgba(255,60,0,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(b.x,b.y,b.size,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha = 1;
+    } else if(b.isZombie){
+      glowDot(b.x, b.y, 9, '#88ff44');
+      ctx.fillStyle = '#ccff88'; ctx.beginPath(); ctx.arc(b.x,b.y,4,0,Math.PI*2); ctx.fill();
+    } else {
+      glowDot(b.x, b.y, b.size*2.6, b.color);
+      ctx.fillStyle = b.color; ctx.beginPath(); ctx.arc(b.x,b.y,b.size,0,Math.PI*2); ctx.fill();
+      if(b.isLaser){ ctx.strokeStyle = b.color; ctx.globalAlpha = 0.5; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(b.x,b.y); ctx.lineTo(b.x-b.vx*1.6,b.y-b.vy*1.6); ctx.stroke(); ctx.globalAlpha = 1; }
+    }
+  }
+
+  // Particles: flat circles, no shadowBlur. This alone roughly doubled the
+  // framerate during minigun/explosion spam.
+  for(const p of G.particles){
+    ctx.globalAlpha = clamp(p.life/p.maxLife, 0, 1);
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  for(const z of G.zombies){
+    if(z.x < vx0-80 || z.x > vx1+80 || z.y < vy0-80 || z.y > vy1+80) continue;
+    // Charger telegraph line
+    if(z.chargeState === 1){
+      ctx.globalAlpha = 0.35; ctx.strokeStyle = '#ff5522'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(z.x,z.y);
+      ctx.lineTo(z.x + Math.cos(z.angle)*340, z.y + Math.sin(z.angle)*340); ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    // Sniper zombie laser-sight telegraph
+    if(z.telegraphT > 0){
+      ctx.globalAlpha = 0.45; ctx.strokeStyle = '#33ff99'; ctx.lineWidth = 2;
+      ctx.setLineDash([7,6]);
+      ctx.beginPath(); ctx.moveTo(z.x,z.y);
+      ctx.lineTo(z.x + Math.cos(z.angle)*900, z.y + Math.sin(z.angle)*900); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+    }
+    if(z.slamT > 0){
+      ctx.globalAlpha = 0.25 + Math.sin(G.elapsed*0.03)*0.15;
+      ctx.fillStyle = '#ff8800';
+      ctx.beginPath(); ctx.arc(z.x, z.y, 210, 0, Math.PI*2); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+    if(z.elite) glowDot(z.x, z.y, z.size*2.1, '#ffd24d');
+    if(z.burn > 0) glowDot(z.x, z.y, z.size*1.7, '#ff6600');
+    if(z.type === 'spider'){
+      drawSpider(z);
+          } else if(z.type === 'dog'){
+      drawHound(z);
+          } else if(z.type === 'crawler'){
+      drawCrawler(z);
+          } else if(z.type === 'exploder'){
+      drawBloater(z);
+          } else if(z.type === 'spitter'){
+      drawSpitter(z);
+          } else if(z.type === 'tank'){
+      drawTank(z);
+    } else {
+      drawHumanoid({
+        x:z.x, y:z.y, angle:z.angle, size:z.size, walk:z.walkPhase,
+        color:z.color, eyeColor:'#ff2222', hitFlash:z.hitFlash>0,
+        armsForward:true, opacity:z.opacity,
+        squat: z.crawler, shield: z.armorFront, armored: z.isBoss || z.elite
+      });
+    }
+    if(z.hp < z.maxHp){
+      const bw = z.size*2.5, bx = z.x-bw/2, by = z.y-z.size-13;
+      ctx.fillStyle = '#26262e'; ctx.fillRect(bx,by,bw,5);
+      ctx.fillStyle = z.isBoss ? '#ff00ff' : (z.elite ? '#ffd24d' : '#00ff88');
+      ctx.fillRect(bx, by, (z.hp/z.maxHp)*bw, 5);
+    }
+    if(z.isBoss || z.elite){
+      ctx.font = 'bold 9px Orbitron, sans-serif'; ctx.fillStyle = z.isBoss?'#ff88cc':'#ffd24d';
+      ctx.textAlign = 'center';
+      ctx.fillText((z.elite?'ELITE ':'') + (z.label||'').toUpperCase() + (z.isBoss?' P'+z.phase:''), z.x, z.y-z.size-19);
+    }
+  }
+
+  drawPlayer();
+
+  // Damage numbers, in world space so they track the enemy they came from.
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for(const f of G.floats){
+    ctx.globalAlpha = clamp(f.life/40, 0, 1);
+    ctx.fillStyle = f.color;
+    ctx.font = `700 ${f.size}px Orbitron, sans-serif`;
+    ctx.fillText(f.txt, f.x, f.y);
+  }
+  ctx.globalAlpha = 1;
+
+  ctx.restore();
+  drawLighting();
+  drawOffscreenMarkers();
+  drawMinimap();
+}
+
+function roundRect(x,y,w,h,r){
+  r = Math.min(r, w/2, h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath();
+}
+
+// Cheap glow: one translucent circle instead of a shadowBlur or a fresh
+// radial gradient per entity per frame.
+function glowDot(x,y,r,color){
+  ctx.globalAlpha = 0.22; ctx.fillStyle = color;
+  ctx.beginPath(); ctx.arc(x,y,Math.max(1,r),0,Math.PI*2); ctx.fill();
+  ctx.globalAlpha = 1;
+}
+
+function drawFloor(x0,y0,x1,y1){
+  const T = 60;
+  const c0 = Math.max(0, Math.floor(x0/T)), c1 = Math.min(Math.ceil(G.worldW/T), Math.ceil(x1/T));
+  const r0 = Math.max(0, Math.floor(y0/T)), r1 = Math.min(Math.ceil(G.worldH/T), Math.ceil(y1/T));
+  for(let r=r0;r<r1;r++) for(let c=c0;c<c1;c++){
+    ctx.fillStyle = (r+c)%2===0 ? '#080a14' : '#0a0c17';
+    ctx.fillRect(c*T, r*T, T, T);
+  }
+  ctx.strokeStyle = 'rgba(0,170,255,0.05)'; ctx.lineWidth = 1;
+  const g0 = Math.floor(x0/120)*120, g1 = x1;
+  for(let x=Math.max(0,g0); x<Math.min(G.worldW,g1); x+=120){
+    ctx.beginPath(); ctx.moveTo(x, Math.max(0,y0)); ctx.lineTo(x, Math.min(G.worldH,y1)); ctx.stroke();
+  }
+  const h0 = Math.floor(y0/120)*120;
+  for(let y=Math.max(0,h0); y<Math.min(G.worldH,y1); y+=120){
+    ctx.beginPath(); ctx.moveTo(Math.max(0,x0), y); ctx.lineTo(Math.min(G.worldW,x1), y); ctx.stroke();
+  }
+  ctx.strokeStyle = '#ff3355'; ctx.lineWidth = 4;
+  ctx.strokeRect(0,0,G.worldW,G.worldH);
+}
+
+// Vector humanoid used for the player and every zombie: head, torso, swinging
+// arms and legs, plus a riot shield for armoured types and a low squat pose for
+// crawlers so the new enemies read at a glance.
+function drawHumanoid(o){
+  const size = o.size, s = size/18;
+  const legW = 4*s, legH = 9*s;
+  const torsoW = 14*s*(o.squat?1.25:1), torsoH = 17*s*(o.squat?0.72:1);
+  const headR = 6.5*s*(o.squat?0.85:1), armW = 9*s, armH = 4.2*s;
+  const swing = Math.sin(o.walk||0)*4*s;
+  const body = o.hitFlash ? '#ffffff' : o.color;
+  ctx.save();
+  ctx.translate(o.x, o.y);
+  ctx.rotate(o.angle||0);
+  ctx.globalAlpha = o.opacity !== undefined ? o.opacity : 1;
+  ctx.fillStyle = o.hitFlash ? '#ffffff' : '#14141f';
+  ctx.fillRect(-legW/2, torsoH/2 - 3*s + swing, legW, legH);
+  ctx.fillRect(-legW/2, -torsoH/2 - legH + 3*s - swing, legW, legH);
+  ctx.fillStyle = body;
+  if(o.armsForward){
+    ctx.fillRect(torsoW/2 - 2*s, -torsoH/2 - armH*0.5 - Math.abs(swing)*0.4, armW, armH*0.85);
+    ctx.fillRect(torsoW/2 - 2*s, torsoH/2 - armH*0.35 + Math.abs(swing)*0.4, armW, armH*0.85);
+  } else {
+    ctx.fillRect(-2*s, -torsoH/2 - armH*0.7 + swing*0.5, armW*0.75, armH*0.75);
+    ctx.fillRect(-2*s, torsoH/2 - armH*0.05 - swing*0.5, armW*0.75, armH*0.75);
+  }
+  ctx.fillStyle = body;
+  roundRect(-torsoW/2, -torsoH/2, torsoW, torsoH, 3*s); ctx.fill();
+  if(o.armored){ ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.fillRect(-torsoW/2, -torsoH/2, torsoW, torsoH*0.4); }
+  ctx.fillStyle = o.hitFlash ? '#ffffff' : (o.headColor || body);
+  ctx.beginPath(); ctx.arc(torsoW/2 + headR*0.4, 0, headR, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = o.eyeColor || '#ff2222';
+  ctx.beginPath(); ctx.arc(torsoW/2 + headR*0.85, -headR*0.35, 1.5*s, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(torsoW/2 + headR*0.85, headR*0.35, 1.5*s, 0, Math.PI*2); ctx.fill();
+  if(o.shield){
+    ctx.fillStyle = '#c9d4e0';
+    roundRect(torsoW/2 + headR*0.9, -size*0.85, 4*s, size*1.7, 2*s); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 1; ctx.stroke();
+  }
+  ctx.restore();
+  ctx.globalAlpha = 1;
+}
+
+// Spider Zombie: a squat body with eight jointed legs skittering out from the
+// center instead of the usual humanoid rig.
+function drawHound(z){
+  const s = z.size/12;
+  const run = Math.sin((z.walkPhase||0)*2)*4*s;
+  const hit = z.hitFlash > 0;
+  const col = hit ? '#ffffff' : z.color;
+  ctx.save();
+  ctx.translate(z.x, z.y);
+  ctx.rotate(z.angle||0);
+  ctx.globalAlpha = z.opacity !== undefined ? z.opacity : 1;
+  ctx.fillStyle = hit ? '#ffffff' : '#3a2412';
+  ctx.fillRect(-9*s+run, -8*s, 6*s, 3*s);
+  ctx.fillRect(-9*s-run,  5*s, 6*s, 3*s);
+  ctx.fillRect( 5*s-run, -8*s, 6*s, 3*s);
+  ctx.fillRect( 5*s+run,  5*s, 6*s, 3*s);
+  ctx.fillStyle = col;
+  ctx.fillRect(-19*s, -1*s, 8*s, 2*s);
+  ctx.beginPath(); ctx.ellipse(0, 0, 13*s, 6*s, 0, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(13*s, 0, 6*s, 5*s, 0, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(11*s,-4*s); ctx.lineTo(9*s,-10*s); ctx.lineTo(15*s,-5*s); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(11*s, 4*s); ctx.lineTo(9*s, 10*s); ctx.lineTo(15*s, 5*s); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#ff2222';
+  ctx.beginPath(); ctx.arc(16*s, -2*s, 1.4*s, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(16*s,  2*s, 1.4*s, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+  ctx.globalAlpha = 1;
+}
+
+function drawCrawler(z){
+  const s = z.size/9;
+  const crawl = Math.sin((z.walkPhase||0)*2.4)*3*s;
+  const col = z.hitFlash>0 ? '#ffffff' : z.color;
+  ctx.save();
+  ctx.translate(z.x, z.y);
+  ctx.rotate(z.angle||0);
+  ctx.globalAlpha = z.opacity !== undefined ? z.opacity : 1;
+  ctx.fillStyle = col;
+  ctx.beginPath(); ctx.ellipse(0, 0, 11*s, 5*s, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = z.hitFlash>0 ? '#ffffff' : '#0d2a0d';
+  ctx.fillRect(-8*s+crawl, -6*s, 5*s, 3*s);
+  ctx.fillRect(-2*s-crawl, -6*s, 5*s, 3*s);
+  ctx.fillRect(4*s+crawl,  -6*s, 5*s, 3*s);
+  ctx.fillRect(-8*s-crawl,  3*s, 5*s, 3*s);
+  ctx.fillRect(-2*s+crawl,  3*s, 5*s, 3*s);
+  ctx.fillRect(4*s-crawl,   3*s, 5*s, 3*s);
+  ctx.fillStyle = col;
+  ctx.beginPath(); ctx.ellipse(10*s, 0, 4*s, 3.4*s, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#ff2222';
+  ctx.beginPath(); ctx.arc(12*s, 0, 1.2*s, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+  ctx.globalAlpha = 1;
+}
+function drawBloater(z){
+  const s = z.size/16;
+  const pulse = 1 + Math.sin((z.walkPhase||0)*3)*0.06;
+  const col = z.hitFlash>0 ? '#ffffff' : z.color;
+  ctx.save();
+  ctx.translate(z.x, z.y);
+  ctx.rotate(z.angle||0);
+  ctx.globalAlpha = z.opacity !== undefined ? z.opacity : 1;
+  ctx.fillStyle = z.hitFlash>0 ? '#ffffff' : '#5a1a00';
+  ctx.beginPath(); ctx.ellipse(-3*s, 8*s, 4*s, 8*s, 0, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(-3*s, -8*s, 4*s, 8*s, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = col;
+  ctx.beginPath(); ctx.arc(0, 0, 13*s*pulse, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(-6*s, -5*s, 6*s*pulse, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(-6*s, 6*s, 6*s*pulse, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(4*s, -7*s, 5*s*pulse, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(4*s, 7*s, 5*s*pulse, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,180,0,0.55)';
+  ctx.beginPath(); ctx.arc(0, 0, 15*s*pulse, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#ffee00';
+  ctx.beginPath(); ctx.arc(9*s, -2.5*s, 1.6*s, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(9*s,  2.5*s, 1.6*s, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+  ctx.globalAlpha = 1;
+}
+
+function drawSpitter(z){
+  const s = z.size/16;
+  const col = z.hitFlash>0 ? '#ffffff' : z.color;
+  ctx.save();
+  ctx.translate(z.x, z.y);
+  ctx.rotate(z.angle||0);
+  ctx.globalAlpha = z.opacity !== undefined ? z.opacity : 1;
+  ctx.fillStyle = z.hitFlash>0 ? '#ffffff' : '#1a4d00';
+  ctx.beginPath(); ctx.ellipse(-8*s, 0, 5*s, 4*s, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = col;
+  ctx.beginPath(); ctx.ellipse(-2*s, 2*s, 9*s, 7*s, 0.2, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(8*s, -3*s, 5*s, 4.5*s, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(150,255,60,0.6)';
+  ctx.beginPath(); ctx.ellipse(-2*s, 4*s, 6*s, 4*s, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#ff2222';
+  ctx.beginPath(); ctx.arc(11*s, -4*s, 1.5*s, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(11*s, -1*s, 1.5*s, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+  ctx.globalAlpha = 1;
+}
+
+function drawTank(z){
+  const s = z.size/28;
+  const col = z.hitFlash>0 ? '#ffffff' : z.color;
+  ctx.save();
+  ctx.translate(z.x, z.y);
+  ctx.rotate(z.angle||0);
+  ctx.globalAlpha = z.opacity !== undefined ? z.opacity : 1;
+  ctx.fillStyle = z.hitFlash>0 ? '#ffffff' : '#1a1a33';
+  ctx.fillRect(-10*s, -18*s, 8*s, 7*s);
+  ctx.fillRect(-10*s,  11*s, 8*s, 7*s);
+  ctx.fillStyle = col;
+  ctx.beginPath(); roundRect(-16*s, -16*s, 30*s, 32*s, 6*s); ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  ctx.fillRect(-16*s, -16*s, 30*s, 8*s);
+  ctx.fillRect(-16*s, -3*s, 30*s, 6*s);
+  ctx.fillRect(-16*s, 9*s, 30*s, 7*s);
+  ctx.fillStyle = col;
+  ctx.beginPath(); ctx.arc(14*s, 0, 9*s, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#ff2222';
+  ctx.beginPath(); ctx.arc(17*s, -3*s, 2*s, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(17*s,  3*s, 2*s, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+  ctx.globalAlpha = 1;
+}
+
+
+function drawSpider(z){
+  const s = z.size/14;
+  const legPhase = z.walkPhase||0;
+  ctx.save();
+  ctx.translate(z.x, z.y);
+  ctx.globalAlpha = z.opacity !== undefined ? z.opacity : 1;
+  ctx.strokeStyle = z.hitFlash>0 ? '#ffffff' : z.color;
+  ctx.lineWidth = 2.2*s;
+  ctx.lineCap = 'round';
+  for(let i=0;i<8;i++){
+    const side = i<4 ? -1 : 1;
+    const idx = i%4;
+    const baseA = side*(0.5+idx*0.35);
+    const flap = Math.sin(legPhase*2.2 + idx) * 0.4;
+    const lx = Math.cos(baseA+flap)*z.size*1.7;
+    const ly = Math.sin(baseA+flap)*z.size*1.7 + (idx-1.5)*z.size*0.3;
+    ctx.beginPath();
+    ctx.moveTo(0, (idx-1.5)*z.size*0.25);
+    ctx.lineTo(lx*0.55, ly*0.55);
+    ctx.lineTo(lx, ly);
+    ctx.stroke();
+  }
+  ctx.fillStyle = z.hitFlash>0 ? '#ffffff' : z.color;
+  ctx.beginPath(); ctx.ellipse(0,0, z.size*0.95, z.size*0.72, 0, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(z.size*0.55,0, z.size*0.5, z.size*0.42, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#ff2222';
+  ctx.beginPath(); ctx.arc(z.size*0.75,-z.size*0.22,1.6*s,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(z.size*0.75, z.size*0.22,1.6*s,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+  ctx.globalAlpha = 1;
+}
+
+function drawPlayer(){
+  if(G.shielded){
+    ctx.strokeStyle = 'rgba(0,170,255,0.55)'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(G.px, G.py, 27, 0, Math.PI*2); ctx.stroke();
+    glowDot(G.px, G.py, 30, '#00aaff');
+  }
+  if(G.doubleDmg) glowDot(G.px, G.py, 26, '#ff3355');
+  if(G.adrenaline) glowDot(G.px, G.py, 24, '#ff8844');
+  drawHumanoid({ x:G.px, y:G.py, angle:G.pAngle, size:18, walk:G.walkPhase,
+                 color:'#2a8f5c', headColor:'#e0b48f', eyeColor:'#111' });
+  ctx.save();
+  ctx.translate(G.px, G.py); ctx.rotate(G.pAngle);
+  const wc = (WEAPONS[G.weapon] && WEAPONS[G.weapon].color) || '#fff';
+  ctx.fillStyle = wc; ctx.fillRect(11, -2.5, 20, 5);
+  if(WEAPONS[G.weapon] && WEAPONS[G.weapon].isMelee){ ctx.fillStyle = '#ddd'; ctx.fillRect(26, -6, 8, 12); }
+  ctx.restore();
+  if(G.reloading){
+    const w = WEAPONS[G.weapon];
+    const total = w.reload * Math.pow(0.85, saveData.upgrades.reload||0);
+    const p = clamp(1 - (G.reloadEnd - performance.now())/total, 0, 1);
+    ctx.strokeStyle = 'rgba(255,136,0,0.85)'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(G.px, G.py, 30, -Math.PI/2, -Math.PI/2 + p*Math.PI*2); ctx.stroke();
+  }
+}
+
+function drawGenerator(){
+  const g = G.generator;
+  const frac = clamp(g.hp/g.maxHp, 0, 1);
+  glowDot(g.x, g.y, g.r*1.7, frac > 0.35 ? '#00aaff' : '#ff3355');
+  ctx.fillStyle = g.hitFlash > 0 ? '#ffffff' : '#1b2436';
+  roundRect(g.x-g.r, g.y-g.r, g.r*2, g.r*2, 10); ctx.fill();
+  ctx.strokeStyle = frac > 0.35 ? '#00aaff' : '#ff3355'; ctx.lineWidth = 3; ctx.stroke();
+  ctx.fillStyle = '#ffcc00'; ctx.font = `${g.r}px serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('🔌', g.x, g.y);
+  const bw = g.r*2.4;
+  ctx.fillStyle = '#26262e'; ctx.fillRect(g.x-bw/2, g.y-g.r-16, bw, 7);
+  ctx.fillStyle = frac > 0.5 ? '#00ff88' : (frac > 0.25 ? '#ffcc00' : '#ff3355');
+  ctx.fillRect(g.x-bw/2, g.y-g.r-16, bw*frac, 7);
+}
+
+// Fog / Blackout mutators: drawn in screen space after the world transform.
+// The blackout mask is composited on an offscreen canvas so the flashlight cone
+// and the ring around your feet punch a real hole in the darkness without
+// erasing the game underneath.
+let _maskC = null, _maskX = null;
+function drawLighting(){
+  const m = mut();
+  if(!m) return;
+  const sx = G.px - G.camX, sy = G.py - G.camY;
+  if(m.fog){
+    const g = ctx.createRadialGradient(sx, sy, 60, sx, sy, Math.max(canvas.width,canvas.height)*0.42);
+    g.addColorStop(0,'rgba(150,160,180,0)'); g.addColorStop(1,'rgba(120,130,150,0.62)');
+    ctx.fillStyle = g; ctx.fillRect(0,0,canvas.width,canvas.height);
+  }
+  if(m.dark){
+    if(!_maskC){ _maskC = document.createElement('canvas'); _maskX = _maskC.getContext('2d'); }
+    if(_maskC.width !== canvas.width || _maskC.height !== canvas.height){
+      _maskC.width = canvas.width; _maskC.height = canvas.height;
+    }
+    const lx = _maskX;
+    lx.globalCompositeOperation = 'source-over';
+    lx.clearRect(0,0,_maskC.width,_maskC.height);
+    lx.fillStyle = 'rgba(0,0,0,0.92)';
+    lx.fillRect(0,0,_maskC.width,_maskC.height);
+    lx.globalCompositeOperation = 'destination-out';
+    lx.beginPath();
+    lx.moveTo(sx, sy);
+    lx.arc(sx, sy, 470, G.pAngle-0.42, G.pAngle+0.42);
+    lx.closePath(); lx.fill();
+    lx.beginPath(); lx.arc(sx, sy, 95, 0, Math.PI*2); lx.fill();
+    lx.globalCompositeOperation = 'source-over';
+    ctx.drawImage(_maskC, 0, 0);
+  }
+}
+
+// Off-screen indicator so a boss or Necromancer can't camp out of view forever.
+function drawOffscreenMarkers(){
+  const cx = canvas.width/2, cy = canvas.height/2, pad = 34;
+  for(const z of G.zombies){
+    if(!z.isBoss && !z.necro && !z.elite) continue;
+    const sx = z.x - G.camX, sy = z.y - G.camY;
+    if(sx > 0 && sx < canvas.width && sy > 0 && sy < canvas.height) continue;
+    const a = Math.atan2(sy-cy, sx-cx);
+    const mx = cx + Math.cos(a)*(cx-pad), my = cy + Math.sin(a)*(cy-pad);
+    ctx.save();
+    ctx.translate(mx,my); ctx.rotate(a);
+    ctx.fillStyle = z.isBoss ? '#ff0044' : (z.elite ? '#ffd24d' : '#aa44ff');
+    ctx.beginPath(); ctx.moveTo(14,0); ctx.lineTo(-9,-8); ctx.lineTo(-9,8); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+}
+
+function drawMinimap(){
+  const sx = 120/G.worldW, sy = 120/G.worldH;
+  mctx.fillStyle = 'rgba(4,5,10,0.9)'; mctx.fillRect(0,0,120,120);
+  mctx.fillStyle = '#161a28';
+  for(const o of G.obstacles) mctx.fillRect(o.x*sx, o.y*sy, Math.max(1,o.w*sx), Math.max(1,o.h*sy));
+  if(G.generator){ mctx.fillStyle = '#00aaff'; mctx.fillRect(G.generator.x*sx-3, G.generator.y*sy-3, 6, 6); }
+  for(const d of G.drops){ mctx.fillStyle = '#ffcc00'; mctx.fillRect(d.x*sx, d.y*sy, 2, 2); }
+  for(const z of G.zombies){
+    mctx.fillStyle = z.isBoss ? '#ff0044' : (z.elite ? '#ffd24d' : z.color);
+    const s = z.isBoss ? 5 : 3;
+    mctx.fillRect(z.x*sx - s/2, z.y*sy - s/2, s, s);
+  }
+  mctx.fillStyle = '#00ff88'; mctx.fillRect(G.px*sx-3, G.py*sy-3, 6, 6);
+}
+
+// ═══════════════════════════════════════════════════
+//  HUD
+// ═══════════════════════════════════════════════════
+function setTxt(id, v){ const e = document.getElementById(id); if(e) e.textContent = v; }
+function setW(id, pct){ const e = document.getElementById(id); if(e) e.style.width = clamp(pct,0,100) + '%'; }
+
+function updateHUD(){
+  const hpPct = (G.hp/G.maxHp)*100;
+  setTxt('hp-val', Math.max(0, Math.ceil(G.hp)));
+  setW('hp-bar', hpPct);
+  const bar = document.getElementById('hp-bar');
+  if(bar) bar.style.background = hpPct > 55 ? 'var(--green)' : (hpPct > 25 ? 'var(--gold)' : 'var(--red)');
+  setTxt('lives-val', '❤'.repeat(Math.max(0,G.lives)) || '—');
+  setTxt('level-val', G.level);
+  setW('xp-bar', (G.xp/G.xpNext)*100);
+  setTxt('wave-val', G.wave);
+  setTxt('score-val', G.score.toLocaleString());
+  setTxt('coins-val', G.coins);
+  setTxt('kills-val', G.kills);
+  setTxt('ammo-val', G.reloading ? 'RELOAD' : (G.maxAmmo === -1 ? '∞' : G.ammo + '/' + G.maxAmmo));
+  const av = document.getElementById('ammo-val');
+  if(av) av.style.color = G.reloading ? 'var(--orange)' : (G.maxAmmo !== -1 && G.ammo <= G.maxAmmo*0.25 ? 'var(--red)' : 'var(--text)');
+  setTxt('weapon-val', (WEAPONS[G.weapon] || {}).name || '—');
+
+  const tBox = document.getElementById('hud-timer');
+  if(tBox){
+    if(gameMode === 'timeattack'){ tBox.classList.remove('hidden'); setTxt('timer-val', Math.ceil(G.timeAttackLeft)); }
+    else tBox.classList.add('hidden');
+  }
+  const gBox = document.getElementById('hud-gen');
+  if(gBox){
+    if(G.generator){
+      gBox.classList.remove('hidden');
+      const pct = (G.generator.hp/G.generator.maxHp)*100;
+      setTxt('gen-val', Math.ceil(pct) + '%');
+      setW('gen-bar', pct);
+      const gb = document.getElementById('gen-bar');
+      if(gb) gb.style.background = pct > 50 ? 'var(--blue)' : (pct > 25 ? 'var(--gold)' : 'var(--red)');
+    } else gBox.classList.add('hidden');
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  ITEM BAR — purchased consumables are real now, with hotkeys.
+// ═══════════════════════════════════════════════════
+function renderItemBar(){
+  const bar = document.getElementById('itemBar');
+  if(!bar) return;
+  if(!gameRunning){ bar.classList.remove('show'); bar.innerHTML = ''; return; }
+  let html = '';
+  for(const p of POWERUPS_STORE){
+    const n = saveData.inventory[p.id] || 0;
+    if(!n) continue;
+    html += `<div class="item-slot" onclick="useItem('${p.id}')" title="${p.name} — ${p.desc}">
+      <div class="is-icon">${p.icon}</div><div class="is-key">${p.key}</div><div class="is-count">x${n}</div></div>`;
+  }
+  bar.innerHTML = html;
+  bar.classList.toggle('show', html !== '');
+}
+
+function useItem(id){
+  if(!gameRunning) return;
+  if(!(saveData.inventory[id] > 0)){ SFX('error'); return; }
+  const now = performance.now();
+  switch(id){
+    case 'healthpack':
+      if(G.hp >= G.maxHp){ SFX('error'); return; }
+      G.hp = Math.min(G.maxHp, G.hp + 50);
+      spawnFloat(G.px, G.py-30, '+50 HP', '#00ff88', 18); SFX('collect_hp'); break;
+    case 'shield':
+      G.shielded = true; G.shieldEnd = now + 30000; SFX('shield');
+      spawnFloat(G.px, G.py-30, 'SHIELDED', '#00aaff', 18); break;
+    case 'nuke': {
+      const snapshot = G.zombies.slice();
+      SFX('nuke'); screenShake(24);
+      for(const z of snapshot) if(!z.dead) hitZombie(z, 999999, undefined, { ignoreArmor:true, countHit:false });
+      spawnParticles(G.px, G.py, '#ffdd00', 40, 12);
+      showWaveBanner('☢ NUKE', 'The map has been cleared'); break;
+    }
+    case 'freeze': freezeAll(5000); break;
+    case 'vampire':
+      G.vampireActive = true; G.vampireEnd = now + 30000; SFX('powerup');
+      spawnFloat(G.px, G.py-30, 'LIFE STEAL', '#ff4477', 18); break;
+    case 'slowmo':
+      G.slowmo = true; G.slowmoEnd = now + 10000; SFX('powerup');
+      spawnFloat(G.px, G.py-30, 'SLOW MO', '#88ddff', 18); break;
+    case 'magnet':
+      G.magnetActive = true; G.magnetEnd = now + 30000; SFX('powerup');
+      spawnFloat(G.px, G.py-30, 'MAGNET', '#ffcc00', 18); break;
+    case 'doubledmg':
+      G.doubleDmg = true; G.doubleDmgEnd = now + 20000; SFX('powerup');
+      spawnFloat(G.px, G.py-30, '2x DAMAGE', '#ff3355', 18); break;
+    case 'adrenaline':
+      G.adrenaline = true; G.adrenalineEnd = now + 15000; SFX('powerup');
+      spawnFloat(G.px, G.py-30, 'ADRENALINE!', '#ff8844', 18); break;
+    default: SFX('error'); return;
+  }
+  saveData.inventory[id]--;
+  if(saveData.inventory[id] <= 0) delete saveData.inventory[id];
+  persist();
+  SFX('item_use');
+  renderItemBar();
+}
+
+// ═══════════════════════════════════════════════════
+//  WAVE / RUN FLOW
+// ═══════════════════════════════════════════════════
+function accuracy(){
+  if(!G.totalShots) return 100;
+  return clamp(Math.round(G.totalHits / G.totalShots * 100), 0, 100);
+}
+
+function statRow(label, val, color){
+  return `<div class="stat-item"><div class="s-label">${label}</div>
+          <div class="s-val" style="color:${color||'var(--gold)'}">${val}</div></div>`;
+}
+
+function waveComplete(){
+  // Time Attack has no breaks — it just rolls straight into the next wave.
+  if(gameMode === 'timeattack'){ G.wave++; startWave(); return; }
+
+  SFX('wave_complete');
+  if(G.wave % 5 === 0) cgMidgameAd();
+  const bonus = G.wave * 100 + G.waveKillsThisWave * 10;
+  G.score += bonus;
+  G.coins += G.wave * 25;
+  saveData.coins += G.wave * 25;
+  persist();
+
+  document.getElementById('waveCompleteTitle').textContent = `WAVE ${G.wave} COMPLETE!`;
+  document.getElementById('waveCompleteMsg').textContent =
+    `${G.waveKillsThisWave} killed this wave. Bonus +${bonus} score, +${G.wave*25} coins.`;
+  document.getElementById('waveStats').innerHTML =
+      statRow('Score', G.score.toLocaleString(), 'var(--gold)')
+    + statRow('Total Kills', G.kills, 'var(--red)')
+    + statRow('Accuracy', accuracy() + '%', 'var(--blue)')
+    + statRow('Skill Points', saveData.skillPoints, 'var(--purple)');
+
+  const nextIsBoss = ((G.wave+1) % 5 === 0) || gameMode === 'bossrush' || (gameMode === 'campaign' && G.wave+1 === 45);
+  document.getElementById('nextWaveInfo').innerHTML = nextIsBoss
+    ? '<span style="color:var(--red)">⚠ Wave ' + (G.wave+1) + (gameMode==='campaign' && G.wave+1===45 ? ' is the FINAL BOSS.' : (gameMode==='campaign' && G.wave+1===20 ? ' is The Harbinger.' : ' is a BOSS wave.')) + '</span>'
+    : 'Spend your coins and skill points before you continue.';
+
+  document.getElementById('waveOverlay').classList.remove('hidden');
+  setPaused(true);
+  saveGame(true);
+}
+
+function nextWave(){
+  document.getElementById('waveOverlay').classList.add('hidden');
+  setPaused(false);
+  G.wave++;
+  G.hp = Math.min(G.maxHp, G.hp + 20);         // small breather heal
+  startWave();
+}
+
+function gameOver(msg){
+  if(!gameRunning) return;
+  gameRunning = false;
+  cancelAnimationFrame(animId);
+  SFX('player_die');
+  cgPlayStop();
+  cgMidgameAd();
+  if(G.score > (saveData.best||0)) saveData.best = G.score;
+  persist();
+  try{ localStorage.removeItem(getStateKey(gameMode)); }catch(e){}
+  updateContinueButtonVisibility();
+
+  document.getElementById('gameOverMsg').textContent = msg || 'You were overwhelmed by the horde!';
+  document.getElementById('goStats').innerHTML =
+      statRow('Final Score', G.score.toLocaleString(), 'var(--gold)')
+    + statRow('Best Score', (saveData.best||0).toLocaleString(), 'var(--gold)')
+    + statRow('Wave Reached', G.wave, 'var(--green)')
+    + statRow('Kills', G.kills, 'var(--red)')
+    + statRow('Accuracy', accuracy() + '%', 'var(--blue)')
+    + statRow('Level', G.level, 'var(--purple)');
+     resetRewardBtn();
+  document.getElementById('gameOverOverlay').classList.remove('hidden');
+  document.getElementById('itemBar').classList.remove('show');
+  document.getElementById('joystick').classList.remove('show');
+  document.getElementById('mobile-shoot').classList.remove('show');
+  document.getElementById('minimap').classList.remove('show');
+}
+
+// ═══════════════════════════════════════════════════
+//  VICTORY / CREDITS — reached only by clearing Campaign wave 30.
+// ═══════════════════════════════════════════════════
+let victoryFxActive = false, victoryFxId = 0;
+const VICTORY_COLORS = ['#ffcc00','#00ff88','#00aaff','#aa44ff','#ff3355','#ff8800'];
+
+function startVictoryFx(){
+  const c = document.getElementById('victoryFx');
+  if(!c) return;
+  const vx = c.getContext('2d');
+  c.width = window.innerWidth; c.height = window.innerHeight;
+
+  const confetti = [];
+  for(let i=0;i<80;i++){
+    confetti.push({
+      x: Math.random()*c.width, y: -20 - Math.random()*c.height,
+      vy: 1.4+Math.random()*2.6, vx:(Math.random()-0.5)*1.6,
+      size:4+Math.random()*5, rot:Math.random()*Math.PI*2, rotSpd:(Math.random()-0.5)*0.22,
+      color: VICTORY_COLORS[Math.floor(Math.random()*VICTORY_COLORS.length)],
+    });
+  }
+  let sparks = [];
+  let lastBurst = 0;
+
+  function spawnBurst(){
+    const bx = c.width*(0.18+Math.random()*0.64), by = c.height*(0.14+Math.random()*0.34);
+    const color = VICTORY_COLORS[Math.floor(Math.random()*VICTORY_COLORS.length)];
+    const n = 44;
+    for(let i=0;i<n;i++){
+      const a = (i/n)*Math.PI*2;
+      const spd = 2.2+Math.random()*3.2;
+      sparks.push({ x:bx, y:by, vx:Math.cos(a)*spd, vy:Math.sin(a)*spd, life:58+Math.random()*22, maxLife:80, color });
+    }
+    SFX('powerup');
+  }
+
+  function frame(ts){
+    if(!victoryFxActive) return;
+    vx.clearRect(0,0,c.width,c.height);
+    if(ts - lastBurst > 850){ lastBurst = ts; spawnBurst(); }
+
+    for(const p of confetti){
+      p.y += p.vy; p.x += p.vx; p.rot += p.rotSpd;
+      if(p.y > c.height + 20){ p.y = -20; p.x = Math.random()*c.width; }
+      vx.save();
+      vx.translate(p.x, p.y); vx.rotate(p.rot);
+      vx.fillStyle = p.color;
+      vx.fillRect(-p.size/2, -p.size/4, p.size, p.size/2);
+      vx.restore();
+    }
+
+    sparks = sparks.filter(s=>s.life>0);
+    for(const s of sparks){
+      s.x += s.vx; s.y += s.vy; s.vy += 0.045; s.life--;
+      vx.globalAlpha = clamp(s.life/s.maxLife, 0, 1);
+      vx.fillStyle = s.color;
+      vx.beginPath(); vx.arc(s.x, s.y, 3, 0, Math.PI*2); vx.fill();
+    }
+    vx.globalAlpha = 1;
+
+    victoryFxId = requestAnimationFrame(frame);
+  }
+  victoryFxActive = true;
+  victoryFxId = requestAnimationFrame(frame);
+}
+
+function stopVictoryFx(){
+  victoryFxActive = false;
+  cancelAnimationFrame(victoryFxId);
+  const c = document.getElementById('victoryFx');
+  if(c){ const vx = c.getContext('2d'); vx.clearRect(0,0,c.width,c.height); }
+}
+
+window.addEventListener('resize', ()=>{
+  if(!victoryFxActive) return;
+  const c = document.getElementById('victoryFx');
+  if(c){ c.width = window.innerWidth; c.height = window.innerHeight; }
+});
+
+function triggerVictory(){
+  if(!gameRunning) return;
+  gameRunning = false;
+  cancelAnimationFrame(animId);
+  cgPlayStop();
+  cgHappy();
+  if(G.score > (saveData.best||0)) saveData.best = G.score;
+  saveData.campaignBeaten = true;
+  persist();
+  try{ localStorage.removeItem(getStateKey('campaign')); }catch(e){}
+  updateContinueButtonVisibility();
+  SFX('level_up');
+
+  document.getElementById('victoryStats').innerHTML =
+      statRow('Final Score', G.score.toLocaleString(), 'var(--gold)')
+    + statRow('Kills', G.kills, 'var(--red)')
+    + statRow('Accuracy', accuracy() + '%', 'var(--blue)')
+    + statRow('Level', G.level, 'var(--purple)');
+
+  document.getElementById('itemBar').classList.remove('show');
+  document.getElementById('joystick').classList.remove('show');
+  document.getElementById('mobile-shoot').classList.remove('show');
+  document.getElementById('minimap').classList.remove('show');
+  document.getElementById('victoryOverlay').classList.remove('hidden');
+  startVictoryFx();
+}
+
+function showCredits(){
+  stopVictoryFx();
+  document.getElementById('victoryOverlay').classList.add('hidden');
+  document.getElementById('creditsOverlay').classList.remove('hidden');
+  const roll = document.getElementById('creditsRoll');
+  roll.style.animation = 'none';
+  void roll.offsetHeight;
+  roll.style.animation = 'creditsScroll 40s linear forwards';
+  SFX('wave_complete');
+}
+
+function closeCredits(){
+  document.getElementById('creditsOverlay').classList.add('hidden');
+  backToMenu();
+}
+
+function playAgainFromCredits(){
+  document.getElementById('creditsOverlay').classList.add('hidden');
+  startGame('campaign');
+}
+
+function hideAllOverlays(){
+  stopVictoryFx();
+  ['menuOverlay','pauseOverlay','waveOverlay','gameOverOverlay','levelUpOverlay','victoryOverlay','creditsOverlay']
+    .forEach(id=>document.getElementById(id).classList.add('hidden'));
+  document.getElementById('storeOverlay').classList.add('hidden');
+  document.getElementById('skillsOverlay').classList.add('hidden');
+}
+
+function startGame(mode){
+  if(VALID_MODES.indexOf(mode) === -1) mode = 'survival';
+  gameMode = mode;
+  hideAllOverlays();
+  gameRunning = true;
+  gamePaused = false;
+  lastFrameTs = 0;
+  shakeAmt = 0; explodeDepth = 0;
+  initGame();
+  resizeCanvas();
+  cgPlayStart();
+  document.getElementById('minimap').classList.add('show');
+  // The joystick / fire button reveal themselves through the mobile media query.
+  document.getElementById('joystick').classList.add('show');
+  document.getElementById('mobile-shoot').classList.add('show');
+  renderItemBar();
+  updateHUD();
+  cancelAnimationFrame(animId);
+  animId = requestAnimationFrame(gameLoop);
+    showTutorial();
+}
+function showTutorial(){
+  if(saveData.tutorialDone) return;
+  document.getElementById('tutorial').classList.add('show');
+  clearTimeout(showTutorial._t);
+  showTutorial._t = setTimeout(hideTutorial, 10000);
+}
+function hideTutorial(){
+  const t = document.getElementById('tutorial');
+  if(!t.classList.contains('show')) return;
+  t.classList.remove('show');
+  saveData.tutorialDone = 1; persist();
+}
+function watchRewardedAd(){
+  const btn = document.getElementById('rewardBtn');
+  if(!btn || btn.disabled) return;
+  function grant(){
+    saveData.coins += 100; persist();
+    btn.disabled = true; btn.textContent = '✓ +100 🪙 CLAIMED';
+    SFX('buy');
+  }
+  if(CG.ready && CG.live){
+    try{
+      window.CrazyGames.SDK.ad.requestAd('rewarded', {
+        adStarted: ()=>{ _preAdSound = _soundEnabled; _soundEnabled = false; },
+        adFinished: ()=>{ _soundEnabled = _preAdSound; grant(); },
+        adError: ()=>{ _soundEnabled = _preAdSound; }
+      });
+    }catch(e){}
+  } else { grant(); }
+}
+
+
+function resetRewardBtn(){
+  const b = document.getElementById('rewardBtn');
+  if(b){ b.disabled = false; b.textContent = '📺 WATCH AD: +100 🪙'; }
+}
+
+function restartGame(){ startGame(gameMode); }
+
+function backToMenu(){
+  gameRunning = false;
+  gamePaused = false;
+  cancelAnimationFrame(animId);
+  cgPlayStop();
+  hideAllOverlays();
+  document.getElementById('menuOverlay').classList.remove('hidden');
+  document.getElementById('itemBar').classList.remove('show');
+  document.getElementById('minimap').classList.remove('show');
+  document.getElementById('joystick').classList.remove('show');
+  document.getElementById('mobile-shoot').classList.remove('show');
+  document.getElementById('combo').classList.remove('show');
+  setTxt('menuBest', (saveData.best||0).toLocaleString());
+  updateContinueButtonVisibility();
+  updateNightmareUnlock();
+}
+
+function pauseGame(){
+  if(!gameRunning || gamePaused) return;
+  setPaused(true);
+  document.getElementById('pauseOverlay').classList.remove('hidden');
+}
+function resumeGame(){
+  document.getElementById('pauseOverlay').classList.add('hidden');
+  if(!gameRunning) return;
+  setPaused(false);
+  lastFrameTs = 0;
+}
+function closeLevelUp(){
+  document.getElementById('levelUpOverlay').classList.add('hidden');
+  if(gameRunning && document.getElementById('waveOverlay').classList.contains('hidden')){
+    setPaused(false); lastFrameTs = 0;
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  SAVE / LOAD  (one in-progress slot per mode)
+// ═══════════════════════════════════════════════════
+const SAVE_FIELDS = ['px','py','hp','maxHp','speed','score','kills','coins','lives','wave','xp','xpNext',
+  'level','weapon','ammo','maxAmmo','baseDmgMult','coinBoost','worldW','worldH','mutator',
+  'timeAttackLeft','totalShots','totalHits','waveZombiesLeft','waveKillsThisWave','elapsed'];
+
+function saveGame(quiet){
+  if(!gameRunning){ if(!quiet) SFX('error'); return; }
+  const st = { mode:gameMode, ts:Date.now(), obstacles:G.obstacles, generator:G.generator };
+  SAVE_FIELDS.forEach(k=>{ st[k] = G[k]; });
+  // Zombies are re-spawned rather than serialised: the wave counter is what matters.
+  st.pendingZombies = G.waveZombiesLeft + G.zombies.length;
+  try{
+    localStorage.setItem(getStateKey(gameMode), JSON.stringify(st));
+    if(!quiet){ SFX('buy'); showWaveBanner('💾 SAVED', modeLabel(gameMode) + ' progress stored'); }
+  }catch(e){ if(!quiet) SFX('error'); }
+  persist();
+  updateContinueButtonVisibility();
+}
+
+function hasSavedGame(mode){
+  try{ return !!localStorage.getItem(getStateKey(mode)); }catch(e){ return false; }
+}
+
+function updateContinueButtonVisibility(){
+  VALID_MODES.forEach(m=>{
+    const btn = document.getElementById('continue-' + m);
+    if(btn) btn.classList.toggle('hidden', !hasSavedGame(m));
+  });
+}
+
+function loadGame(mode){
+  let st = null;
+  try{ st = JSON.parse(localStorage.getItem(getStateKey(mode)) || 'null'); }catch(e){ st = null; }
+  if(!st){ SFX('error'); return; }
+
+  gameMode = mode;
+  hideAllOverlays();
+  gameRunning = true; gamePaused = false;
+  lastFrameTs = 0; shakeAmt = 0; explodeDepth = 0;
+  initGame();                                  // rebuild a valid G, then overwrite it
+  SAVE_FIELDS.forEach(k=>{ if(st[k] !== undefined) G[k] = st[k]; });
+  if(Array.isArray(st.obstacles) && st.obstacles.length) G.obstacles = st.obstacles;
+  if(st.generator) G.generator = st.generator;
+  G.zombies = []; G.bullets = []; G.particles = []; G.drops = [];
+  G.explosions = []; G.floats = []; G.corpses = []; G.shockwaves = []; G.decals = [];
+  G.waveActive = true;
+  G.waveZombiesLeft = Math.max(1, st.pendingZombies || (5 + G.wave*3));
+  G.waveSpawnTimer = 0;
+  G.reloading = false; G.ammo = (G.maxAmmo === -1) ? -1 : Math.max(0, G.ammo);
+  G.furyStacks = 0;
+  G.shielded = false; G.frozen = false; G.vampireActive = false;
+  G.slowmo = false; G.magnetActive = false; G.doubleDmg = false; G.adrenaline = false;
+  updateMutatorHud();
+  resizeCanvas();
+  cgPlayStart();
+  document.getElementById('minimap').classList.add('show');
+  document.getElementById('joystick').classList.add('show');
+  document.getElementById('mobile-shoot').classList.add('show');
+  renderItemBar();
+  updateHUD();
+  showWaveBanner('WAVE ' + G.wave, 'Run restored — ' + modeLabel(mode));
+  cancelAnimationFrame(animId);
+  animId = requestAnimationFrame(gameLoop);
+}
+
+// ═══════════════════════════════════════════════════
+//  STORE
+// ═══════════════════════════════════════════════════
+let _storeOpenedWhilePlaying = false;
+function openStore(){
+  _storeOpenedWhilePlaying = gameRunning && !gamePaused;
+  if(gameRunning) setPaused(true);
+  document.getElementById('storeOverlay').classList.remove('hidden');
+  renderStore();
+}
+function closeStore(){
+  document.getElementById('storeOverlay').classList.add('hidden');
+  renderItemBar();
+  // Only resume if no other overlay (pause / wave / level-up / game over) is up.
+  const blocked = ['pauseOverlay','waveOverlay','levelUpOverlay','gameOverOverlay']
+    .some(id=>!document.getElementById(id).classList.contains('hidden'));
+  if(gameRunning && _storeOpenedWhilePlaying && !blocked){ setPaused(false); lastFrameTs = 0; }
+}
+function switchStoreTab(tab, el){
+  currentStoreTab = tab;
+  document.querySelectorAll('.store-tab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderStore();
+}
+
+function renderStore(){
+  setTxt('store-coins-display', saveData.coins);
+  const grid = document.getElementById('storeGrid');
+  let html = '';
+
+  if(currentStoreTab === 'weapons'){
+    for(const id of WEAPON_IDS){
+      const w = WEAPONS[id];
+      const owned = saveData.owned.includes(id);
+      const equipped = saveData.equipped === id;
+      const afford = saveData.coins >= w.price;
+      let btn;
+      if(equipped)    btn = `<button class="item-btn equipped-lbl">✓ EQUIPPED</button>`;
+      else if(owned)  btn = `<button class="item-btn equip" onclick="equipWeapon('${id}')">EQUIP</button>`;
+      else if(afford) btn = `<button class="item-btn buy" onclick="buyWeapon('${id}')">BUY</button>`;
+      else            btn = `<button class="item-btn cant">NEED ${w.price - saveData.coins}🪙</button>`;
+      html += `<div class="store-item ${equipped?'equipped':(owned?'owned':'')}">
+        ${owned && !equipped ? '<span class="badge-owned">OWNED</span>' : ''}
+        <div class="item-icon">${w.icon}</div>
+        <div class="item-name">${w.name}</div>
+        <div class="item-desc">${w.desc}</div>
+        <div class="item-price">${owned ? '—' : w.price + ' 🪙'}</div>
+        ${btn}</div>`;
+    }
+  } else if(currentStoreTab === 'powerups'){
+    for(const p of POWERUPS_STORE){
+      const have = saveData.inventory[p.id] || 0;
+      const afford = saveData.coins >= p.price;
+      html += `<div class="store-item ${have?'owned':''}">
+        ${have ? `<span class="badge-count">x${have}</span>` : ''}
+        <div class="item-icon">${p.icon}</div>
+        <div class="item-name">${p.name}</div>
+        <div class="item-desc">${p.desc}<br><b style="color:var(--blue)">Hotkey: ${p.key}</b></div>
+        <div class="item-price">${p.price} 🪙</div>
+        ${afford ? `<button class="item-btn buy" onclick="buyPowerup('${p.id}')">BUY</button>`
+                 : `<button class="item-btn cant">NEED ${p.price - saveData.coins}🪙</button>`}</div>`;
+    }
+  } else if(currentStoreTab === 'upgrades'){
+    for(const u of UPGRADES_STORE){
+      const lvl = saveData.upgrades[u.id] || 0;
+      const maxed = lvl >= UPGRADE_MAX;
+      const price = Math.round(u.price * Math.pow(1.6, lvl));
+      const afford = saveData.coins >= price;
+      html += `<div class="store-item ${lvl?'owned':''}">
+        ${lvl ? `<span class="badge-count">LV ${lvl}/${UPGRADE_MAX}</span>` : ''}
+        <div class="item-icon">${u.icon}</div>
+        <div class="item-name">${u.name}</div>
+        <div class="item-desc">${u.desc}</div>
+        <div class="item-price">${maxed ? 'MAXED' : price + ' 🪙'}</div>
+        ${maxed ? `<button class="item-btn equipped-lbl">✓ MAX LEVEL</button>`
+          : (afford ? `<button class="item-btn buy" onclick="buyUpgrade('${u.id}')">UPGRADE</button>`
+                    : `<button class="item-btn cant">NEED ${price - saveData.coins}🪙</button>`)}</div>`;
+    }
+  } else {
+    // Bestiary: every type you have actually met, with its counter-play.
+    const seenCount = Object.keys(ZOMBIE_TYPES).filter(k=>saveData.seen[k]).length;
+    html += `<div style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:12px;margin-bottom:4px">
+      Discovered ${seenCount}/${Object.keys(ZOMBIE_TYPES).length} — kill something new to fill this in.</div>`;
+    for(const k of Object.keys(ZOMBIE_TYPES)){
+      const z = ZOMBIE_TYPES[k];
+      const known = !!saveData.seen[k];
+      html += `<div class="store-item ${known?'owned':''}" style="text-align:left">
+        <div class="item-icon" style="text-align:center;color:${z.color}">${known?'🧟':'❓'}</div>
+        <div class="item-name" style="color:${known?z.color:'var(--muted)'};text-align:center">
+          ${known ? z.label : '???'}</div>
+        <div class="item-desc">${known ? z.desc : 'Not encountered yet.'}</div>
+        <div style="font-size:9px;color:var(--muted)">
+          ${known ? `HP ${z.hp} · SPD ${z.spd} · DMG ${z.dmg} · from wave ${z.minWave}` : '&nbsp;'}</div>
+      </div>`;
+    }
+  }
+  grid.innerHTML = html;
+}
+
+function buyWeapon(id){
+  const w = WEAPONS[id];
+  if(!w || saveData.owned.includes(id)) return;
+  if(saveData.coins < w.price){ SFX('error'); return; }
+  saveData.coins -= w.price;
+  saveData.owned.push(id);
+  SFX('buy');
+  equipWeapon(id);        // buying mid-run puts it straight in your hands
+}
+
+function equipWeapon(id){
+  if(!saveData.owned.includes(id)) return;
+  saveData.equipped = id;
+  // Swapping mid-run should actually swap the gun in your hands.
+  if(gameRunning && gameMode !== 'sniper'){
+    G.weapon = id;
+    G.maxAmmo = ammoCapFor(id);
+    G.ammo = G.maxAmmo;
+    G.reloading = false;
+  }
+  persist(); SFX('buy'); renderStore();
+}
+
+function buyPowerup(id){
+  const p = POWERUPS_STORE.find(x=>x.id === id);
+  if(!p) return;
+  if(saveData.coins < p.price){ SFX('error'); return; }
+  saveData.coins -= p.price;
+  saveData.inventory[id] = (saveData.inventory[id] || 0) + 1;
+  persist(); SFX('buy'); renderStore(); renderItemBar();
+}
+
+function buyUpgrade(id){
+  const u = UPGRADES_STORE.find(x=>x.id === id);
+  if(!u) return;
+  const lvl = saveData.upgrades[id] || 0;
+  if(lvl >= UPGRADE_MAX){ SFX('error'); return; }
+  const price = Math.round(u.price * Math.pow(1.6, lvl));
+  if(saveData.coins < price){ SFX('error'); return; }
+  saveData.coins -= price;
+  saveData.upgrades[id] = lvl + 1;
+  // Apply live so the purchase isn't dead weight until the next run.
+  if(gameRunning){
+    if(id === 'maxhp'){ G.maxHp += 25; G.hp += 25; }
+    if(id === 'speed'){ G.speed += 0.42; }
+    if(id === 'damage'){ G.baseDmgMult += 0.1; }
+    if(id === 'coinboost'){ G.coinBoost += 0.5; }
+    if(id === 'ammo' && G.maxAmmo !== -1){ G.maxAmmo = ammoCapFor(G.weapon); }
+  }
+  persist(); SFX('buy'); renderStore();
+}
+
+// ═══════════════════════════════════════════════════
+//  SKILL TREE — one banked pool of points, permanent levels.
+//  FIX: the old code read points from the live run but wrote levels to saveData,
+//  so restarting a run refunded every point you had already spent.
+// ═══════════════════════════════════════════════════
+let _skillsOpenedWhilePlaying = false;
+function openSkills(){
+  _skillsOpenedWhilePlaying = gameRunning && !gamePaused;
+  if(gameRunning) setPaused(true);
+  document.getElementById('skillsOverlay').classList.remove('hidden');
+  renderSkills();
+}
+function closeSkills(){
+  document.getElementById('skillsOverlay').classList.add('hidden');
+  const blocked = ['pauseOverlay','waveOverlay','levelUpOverlay','gameOverOverlay']
+    .some(id=>!document.getElementById(id).classList.contains('hidden'));
+  if(gameRunning && _skillsOpenedWhilePlaying && !blocked){ setPaused(false); lastFrameTs = 0; }
+}
+
+function renderSkills(){
+  setTxt('skillPointsDisplay', saveData.skillPoints || 0);
+  let html = '';
+  for(const s of SKILLS_DEF){
+    const lvl = saveData.skills[s.id] || 0;
+    const maxed = lvl >= s.maxLvl;
+    const canBuy = !maxed && (saveData.skillPoints || 0) > 0;
+    let pips = '';
+    for(let i=0;i<s.maxLvl;i++) pips += `<div class="skill-pip ${i<lvl?'filled':''}"></div>`;
+    html += `<div class="skill-card">
+      <h4>${s.name} <span style="color:var(--muted)">${lvl}/${s.maxLvl}</span></h4>
+      <p>${s.desc}</p>
+      <div class="skill-level">${pips}</div>
+      <button class="skill-upgrade-btn" ${canBuy?'':'disabled'} onclick="upgradeSkill('${s.id}')">
+        ${maxed ? '✓ MAXED' : (canBuy ? 'UPGRADE (1 PT)' : 'NO POINTS')}</button>
+    </div>`;
+  }
+  document.getElementById('skillsGrid').innerHTML = html;
+}
+
+function upgradeSkill(id){
+  const def = SKILLS_DEF.find(s=>s.id === id);
+  if(!def) return;
+  const lvl = saveData.skills[id] || 0;
+  if(lvl >= def.maxLvl || (saveData.skillPoints||0) <= 0){ SFX('error'); return; }
+  saveData.skillPoints--;
+  saveData.skills[id] = lvl + 1;
+  persist();
+  SFX('level_up');
+
+  // Apply the new level to the run in progress instead of waiting for a restart.
+  if(gameRunning){
+    G.skills[id] = lvl + 1;
+    if(id === 'glass'){ G.baseDmgMult += 0.20; applyHpSkills(); }
+    if(id === 'tank'){ G.speed *= (1 - 0.05); applyHpSkills(); }
+    if(id === 'lucky'){ /* read live from G.skills */ }
+  }
+  renderSkills();
+  updateHUD();
+}
+
+// Recompute max HP from the permanent upgrades + Glass Cannon / Tank Mode levels,
+// keeping the current HP ratio so a mid-run purchase never kills you.
+function applyHpSkills(){
+  const glass = G.skills.glass || 0, tank = G.skills.tank || 0;
+  const ratio = G.maxHp > 0 ? G.hp/G.maxHp : 1;
+  let maxHp = (100 + (saveData.upgrades.maxhp||0)*25) * (1 - glass*0.10) * (1 + tank*0.15);
+  G.maxHp = Math.max(30, Math.round(maxHp));
+  G.hp = clamp(Math.round(G.maxHp * ratio), 1, G.maxHp);
+}
+
+// ═══════════════════════════════════════════════════
+//  INPUT
+// ═══════════════════════════════════════════════════
+let mobileFire = false;
+
+function anyOverlayOpen(){
+  return ['menuOverlay','pauseOverlay','waveOverlay','gameOverOverlay','levelUpOverlay','storeOverlay','skillsOverlay','victoryOverlay','creditsOverlay']
+    .some(id=>{ const e = document.getElementById(id); return e && !e.classList.contains('hidden'); });
+}
+
+document.addEventListener('keydown', e=>{
+  const k = e.key.toLowerCase();
+  keys[k] = true;
+
+  if(k === 'escape'){
+    if(!document.getElementById('storeOverlay').classList.contains('hidden')) closeStore();
+    else if(!document.getElementById('skillsOverlay').classList.contains('hidden')) closeSkills();
+    else if(gameRunning && gamePaused && !document.getElementById('pauseOverlay').classList.contains('hidden')) resumeGame();
+    else if(gameRunning) pauseGame();
+    return;
+  }
+  if(!gameRunning || anyOverlayOpen()) return;
+
+  if(k === 'r'){ startReload(); e.preventDefault(); return; }
+  if(k === ' '){ shoot(); e.preventDefault(); return; }
+
+  // Consumable hotkeys
+  const itemId = ITEM_BY_KEY[k.toUpperCase()];
+  if(itemId){ useItem(itemId); e.preventDefault(); return; }
+
+  // Weapon slots 1-9 and 0, restricted to what you own (and locked in Sniper Only).
+  if(k >= '0' && k <= '9'){
+    if(gameMode === 'sniper'){ SFX('error'); return; }
+    const idx = k === '0' ? 9 : (parseInt(k,10) - 1);
+    const id = WEAPON_IDS[idx];
+    if(!id) return;
+    if(!saveData.owned.includes(id)){ SFX('error'); spawnFloat(G.px, G.py-34, 'NOT OWNED', '#ff3355', 14); return; }
+    if(G.weapon === id) return;
+    G.weapon = id;
+    saveData.equipped = id;
+    G.maxAmmo = ammoCapFor(id);
+    G.ammo = G.maxAmmo;
+    G.reloading = false;
+    persist();
+    spawnFloat(G.px, G.py-34, WEAPONS[id].name, WEAPONS[id].color, 14);
+    SFX('buy');
+  }
+});
+document.addEventListener('keyup', e=>{ keys[e.key.toLowerCase()] = false; });
+window.addEventListener('blur', ()=>{ for(const k in keys) keys[k] = false; mouseDown = false; });
+
+// Mouse is stored in canvas space; the canvas starts HUD_H down the page.
+function updateMouse(clientX, clientY){
+  const r = canvas.getBoundingClientRect();
+  mousePos.x = clientX - r.left;
+  mousePos.y = clientY - r.top;
+}
+canvas.addEventListener('mousemove', e=>updateMouse(e.clientX, e.clientY));
+canvas.addEventListener('mousedown', e=>{
+  if(e.button !== 0) return;
+  updateMouse(e.clientX, e.clientY);
+  mouseDown = true;
+  if(gameRunning && !gamePaused){
+    const w = WEAPONS[G.weapon];
+    if(w && !w.auto && !w.isMelee) shoot();     // single-shot weapons fire on click
+  }
+});
+window.addEventListener('mouseup', ()=>{ mouseDown = false; });
+canvas.addEventListener('contextmenu', e=>e.preventDefault());
+
+// ── Touch: virtual joystick + fire button ──
+const joyEl = document.getElementById('joystick');
+const knobEl = document.getElementById('joystick-knob');
+const baseEl = document.getElementById('joystick-base');
+const fireEl = document.getElementById('mobile-shoot');
+
+function joyMove(t){
+  const r = baseEl.getBoundingClientRect();
+  const cx = r.left + r.width/2, cy = r.top + r.height/2;
+  let dx = t.clientX - cx, dy = t.clientY - cy;
+  const d = Math.hypot(dx,dy), max = r.width/2;
+  if(d > max){ dx = dx/d*max; dy = dy/d*max; }
+  knobEl.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+  const n = Math.max(1, Math.hypot(dx,dy));
+  joystickDir.x = dx/max; joystickDir.y = dy/max;
+  if(n < 8){ joystickDir.x = 0; joystickDir.y = 0; }
+}
+joyEl.addEventListener('touchstart', e=>{ joystickActive = true; joyMove(e.touches[0]); e.preventDefault(); }, {passive:false});
+joyEl.addEventListener('touchmove',  e=>{ if(joystickActive) joyMove(e.touches[0]); e.preventDefault(); }, {passive:false});
+function joyEnd(e){
+  joystickActive = false; joystickDir.x = 0; joystickDir.y = 0;
+  knobEl.style.transform = 'translate(-50%,-50%)';
+  if(e) e.preventDefault();
+}
+joyEl.addEventListener('touchend', joyEnd, {passive:false});
+joyEl.addEventListener('touchcancel', joyEnd, {passive:false});
+
+fireEl.addEventListener('touchstart', e=>{
+  mobileFire = true; mouseDown = true;
+  if(gameRunning && !gamePaused){
+    const w = WEAPONS[G.weapon];
+    if(w && !w.auto && !w.isMelee) shoot();
+  }
+  e.preventDefault();
+}, {passive:false});
+function fireEnd(e){ mobileFire = false; mouseDown = false; if(e) e.preventDefault(); }
+fireEl.addEventListener('touchend', fireEnd, {passive:false});
+fireEl.addEventListener('touchcancel', fireEnd, {passive:false});
+
+// On touch, aim at wherever you last tapped the play area.
+canvas.addEventListener('touchstart', e=>{ updateMouse(e.touches[0].clientX, e.touches[0].clientY); }, {passive:true});
+canvas.addEventListener('touchmove',  e=>{ updateMouse(e.touches[0].clientX, e.touches[0].clientY); }, {passive:true});
+
+// ── HUD buttons ──
+document.getElementById('storeBtn').addEventListener('click', openStore);
+document.getElementById('skillsBtn').addEventListener('click', openSkills);
+document.getElementById('saveBtn').addEventListener('click', ()=>saveGame(false));
+document.getElementById('pauseBtn').addEventListener('click', ()=>{ gamePaused ? resumeGame() : pauseGame(); });
+document.getElementById('musicBtn').addEventListener('click', function(){
+  _soundEnabled = !_soundEnabled;
+  this.textContent = _soundEnabled ? '🔊 SOUND' : '🔇 MUTED';
+  this.classList.toggle('active', !_soundEnabled);
+  if(_soundEnabled) SFX('buy');
+});
+
+// ── Bootstrap ──
+setTxt('menuBest', (saveData.best||0).toLocaleString());
+updateContinueButtonVisibility();
+updateNightmareUnlock();
+renderStore();
+renderSkills();
+document.getElementById('menuOverlay').classList.remove('hidden');
+
+// Expose the handlers used by inline onclick attributes.
+Object.assign(window, {
+  startGame, loadGame, restartGame, backToMenu, pauseGame, resumeGame, nextWave, closeLevelUp,
+  saveGame, openStore, closeStore, switchStoreTab, buyWeapon, equipWeapon, buyPowerup, buyUpgrade,
+  openSkills, closeSkills, upgradeSkill, useItem, showCredits, closeCredits, playAgainFromCredits,
+  watchRewardedAd, gmEvent,
+});
+
+</script>
+<!-- ===== ZOMBIE ANDROID PATCH: paste this block just before </body> ===== -->
+<style>
+#rewardBtn{display:none!important}
+#mobile-extra{position:fixed;right:calc(20px + env(safe-area-inset-right,0px));bottom:calc(108px + env(safe-area-inset-bottom,0px));z-index:110;display:none;gap:10px}
+#mobile-extra button{width:50px;height:50px;border-radius:50%;border:2px solid rgba(255,255,255,.3);background:rgba(13,15,26,.7);color:#fff;font-size:22px;touch-action:none;user-select:none}
+@media (pointer:coarse){
+#hud{gap:4px;padding:calc(4px + env(safe-area-inset-top,0px)) 8px 4px}
+.hud-box{min-width:40px;padding:2px 6px}
+.hud-label{font-size:7px;letter-spacing:1px}
+.hud-val{font-size:11px}
+.hud-btn{padding:4px 7px;font-size:9px}
+#hud-kills,#saveBtn{display:none}
+#joystick.show{display:block}
+#mobile-shoot.show{display:flex}
+#mobile-extra.show{display:flex}
+#gameCanvas{cursor:default}
+}
+</style>
+<script>
+(function(){
+'use strict';
+var COARSE=window.matchMedia('(pointer:coarse)').matches;
+
+// 1) Never use web-portal ad SDKs inside the app.
+try{Object.defineProperty(CG,'live',{get:function(){return false},set:function(){},configurable:true})}catch(e){}
+
+// 2) Touch auto-aim: aim at the nearest zombie unless the player tapped the screen to aim.
+var touchAt=0;
+canvas.addEventListener('touchstart',function(){touchAt=performance.now()},{passive:true});
+canvas.addEventListener('touchmove',function(){touchAt=performance.now()},{passive:true});
+var origDraw=window.draw;
+window.draw=function(){
+  if(COARSE&&gameRunning&&performance.now()-touchAt>1300){
+    var best=null,bd=700*700;
+    for(var i=0;i<G.zombies.length;i++){var z=G.zombies[i];if(z.dead)continue;var d=dist2(z.x,z.y,G.px,G.py);if(d<bd){bd=d;best=z}}
+    var tx,ty;
+    if(best){tx=best.x;ty=best.y}
+    else if(joystickActive&&(joystickDir.x||joystickDir.y)){tx=G.px+joystickDir.x*200;ty=G.py+joystickDir.y*200}
+    if(tx!==undefined){mousePos.x=tx-G.camX;mousePos.y=ty-G.camY}
+  }
+  origDraw();
+};
+
+// 3) Touch buttons: reload and swap weapon (keyboard keys do not exist on phones).
+function swapWeapon(){
+  if(!gameRunning||gamePaused||gameMode==='sniper'){SFX('error');return}
+  var own=WEAPON_IDS.filter(function(id){return saveData.owned.indexOf(id)!==-1});
+  if(own.length<2){SFX('error');return}
+  var id=own[(own.indexOf(G.weapon)+1)%own.length];
+  G.weapon=id;saveData.equipped=id;G.maxAmmo=ammoCapFor(id);G.ammo=G.maxAmmo;G.reloading=false;persist();
+  spawnFloat(G.px,G.py-34,WEAPONS[id].name,WEAPONS[id].color,14);SFX('buy');
+}
+var ex=document.createElement('div');ex.id='mobile-extra';
+ex.innerHTML='<button id="mReload">⟳</button><button id="mSwap">⇄</button>';
+document.body.appendChild(ex);
+function bind(id,fn){
+  var b=document.getElementById(id);
+  b.addEventListener('touchstart',function(e){fn();e.preventDefault()},{passive:false});
+  b.addEventListener('click',fn);
+}
+bind('mReload',function(){if(gameRunning&&!gamePaused)startReload()});
+bind('mSwap',swapWeapon);
+setInterval(function(){ex.classList.toggle('show',COARSE&&gameRunning&&!anyOverlayOpen())},250);
+
+// 4) Tutorial text for touch screens.
+window.showTutorial=function(){
+  if(saveData.tutorialDone)return;
+  var t=document.getElementById('tutorial');
+  if(COARSE)t.innerHTML='<b>HOW TO PLAY</b><br>Move: <b>left joystick</b> · Fire: <b>🔫</b> (auto-aim)<br>⟳ reload · ⇄ swap weapon · tap the screen to aim yourself';
+  t.classList.add('show');
+  clearTimeout(window.showTutorial._t);
+  window.showTutorial._t=setTimeout(hideTutorial,10000);
+};
+
+// 5) Auto-pause when the app goes to the background.
+document.addEventListener('visibilitychange',function(){
+  if(document.hidden&&gameRunning&&!gamePaused&&!anyOverlayOpen())pauseGame();
+});
+
+// 6) Bug fix: base HP was 100 here but 130 at run start, so Glass Cannon / Tank skills mid-run changed max HP wrongly.
+window.applyHpSkills=function(){
+  var glass=G.skills.glass||0,tank=G.skills.tank||0;
+  var ratio=G.maxHp>0?G.hp/G.maxHp:1;
+  G.maxHp=Math.max(30,Math.round((130+(saveData.upgrades.maxhp||0)*25)*(1-glass*0.10)*(1+tank*0.15)));
+  G.hp=clamp(Math.round(G.maxHp*ratio),1,G.maxHp);
+};
+
+// 7) Daily reward with a streak: a real reason to come back every day.
+function dayKey(t){return new Date(t).toLocaleDateString('en-CA')}
+function info(){
+  var d=saveData.daily||{last:'',streak:0},today=dayKey(Date.now()),yest=dayKey(Date.now()-864e5);
+  var can=d.last!==today,streak=can?(d.last===yest?d.streak+1:1):d.streak;
+  return {can:can,streak:streak,coins:Math.min(500,100+(streak-1)*50)};
+}
+var db=document.createElement('button');db.className='btn btn-blue';db.id='dailyBtn';
+var row=document.querySelector('#menuOverlay .btn-row');if(row)row.appendChild(db);
+function showDaily(){
+  var i=info();db.disabled=!i.can;db.style.opacity=i.can?1:.55;
+  db.textContent=i.can?'🎁 DAILY +'+i.coins+'🪙 (DAY '+i.streak+')':'🎁 DAY '+i.streak+' CLAIMED';
+}
+db.addEventListener('click',function(){
+  var i=info();if(!i.can){SFX('error');return}
+  saveData.coins+=i.coins;saveData.daily={last:dayKey(Date.now()),streak:i.streak};
+  persist();SFX('buy');showDaily();
+});
+showDaily();
+var ob=window.backToMenu;
+window.backToMenu=function(){ob.apply(this,arguments);showDaily()};
+
+// 8) Re-measure the HUD after the compact touch styles apply.
+setTimeout(resizeCanvas,60);
+window.addEventListener('load',resizeCanvas);
+})();
+</script>
+<!-- ===== END PATCH ===== -->
+<script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});</script>
+</body>
+</html>

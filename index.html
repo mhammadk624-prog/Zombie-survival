@@ -156,6 +156,100 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter'
 </style>
 </head>
 <body>
+  <!-- ===== ZOMBIE SPLASH + LOADING SCREEN: paste right AFTER the opening <body> tag ===== -->
+<style>
+#qs{position:fixed;inset:0;z-index:99999;background:#04050a;overflow:hidden;color:#fff;font-family:Orbitron,"Arial Black",Impact,system-ui,sans-serif;transition:opacity .55s ease;user-select:none}
+#qs *{box-sizing:border-box}
+.qs-bg{position:absolute;inset:-8%;background:
+  url('splash-bg.jpg') center/cover no-repeat,
+  radial-gradient(ellipse at 50% 112%,rgba(255,40,60,.55),transparent 55%),
+  radial-gradient(ellipse at 18% 28%,rgba(0,255,136,.22),transparent 50%),
+  radial-gradient(ellipse at 82% 18%,rgba(120,60,255,.28),transparent 50%),
+  #070a14;
+  filter:blur(7px) brightness(.8);opacity:0;transition:opacity .8s;animation:qszoom 14s ease-in-out infinite alternate}
+.qs-z{position:absolute;bottom:-6%;font-size:min(34vw,190px);filter:blur(9px);opacity:.3;line-height:1}
+.qs-moon{position:absolute;top:6%;right:9%;font-size:min(16vw,90px);filter:blur(4px);opacity:.5}
+.qs-vig{position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,transparent 28%,rgba(0,0,0,.8))}
+.qs-logo,.qs-load{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px}
+.qs-logo{animation:qslogo 1.9s ease both}
+.qs-logo svg{filter:drop-shadow(0 0 18px rgba(0,255,136,.55))}
+.qs-brand{margin-top:14px;font-size:clamp(22px,6vw,40px);font-weight:900;letter-spacing:.32em;padding-left:.32em;background:linear-gradient(90deg,#00ff88,#00aaff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.qs-sub{margin-top:8px;font-size:11px;letter-spacing:.5em;padding-left:.5em;color:#7a86b0}
+.qs-load{opacity:0;transition:opacity .7s}
+#qs.s2 .qs-load{opacity:1}
+#qs.s2 .qs-bg{opacity:1}
+.qs-title{font-size:clamp(26px,7vw,52px);font-weight:900;line-height:1.1;text-shadow:0 0 30px rgba(255,51,85,.5)}
+.qs-title span:first-child{color:#ff3355}.qs-title span:last-child{color:#00ff88}
+.qs-by{margin:6px 0 26px;font-size:11px;letter-spacing:.35em;color:#9aa6d0}
+.qs-bar{width:min(78vw,420px);height:12px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden;border:1px solid rgba(255,255,255,.18)}
+.qs-fill{height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,#00ff88,#00aaff);box-shadow:0 0 16px rgba(0,255,136,.7)}
+.qs-pct{margin-top:10px;font-size:13px;letter-spacing:.2em;color:#cfd8ff}
+.qs-tip{margin-top:22px;max-width:min(86vw,460px);min-height:2.6em;font-family:system-ui,sans-serif;font-size:13px;line-height:1.5;color:#aab4dc}
+.qs-skip{position:absolute;bottom:16px;left:0;right:0;text-align:center;font-family:system-ui,sans-serif;font-size:11px;color:#6f7aa3;opacity:0;transition:opacity .6s .9s}
+#qs.s2 .qs-skip{opacity:1}
+@keyframes qslogo{0%{opacity:0;transform:scale(.88)}28%{opacity:1;transform:scale(1)}74%{opacity:1;transform:scale(1.02)}100%{opacity:0;transform:scale(1.05)}}
+@keyframes qszoom{to{transform:scale(1.1)}}
+@media(prefers-reduced-motion:reduce){.qs-bg{animation:none}}
+</style>
+<script>
+(function(){
+try{if(sessionStorage.getItem('qs_seen'))return;sessionStorage.setItem('qs_seen','1')}catch(e){}
+var tips=[
+ 'Tip: Hold the fire button. Auto-aim finds the nearest zombie.',
+ 'Tip: Bloaters explode when they die. Keep your distance.',
+ 'Tip: A boss arrives every 5th wave. Save your ☢️ nukes.',
+ 'Tip: Sniper bullets pierce the whole horde. Line them up!',
+ 'Tip: Claim your 🎁 daily reward on the main menu.',
+ 'Tip: Kill Screamers first. They call in more zombies.',
+ 'Tip: Riot Zombies block bullets from the front. Flank them.'
+];
+var el=document.createElement('div');el.id='qs';el.setAttribute('aria-hidden','true');
+el.innerHTML=
+ '<div class="qs-bg"></div>'+
+ '<span class="qs-moon">🌕</span>'+
+ '<span class="qs-z" style="left:-4%">🧟</span><span class="qs-z" style="left:34%;font-size:min(40vw,230px);opacity:.22">🧟</span><span class="qs-z" style="right:-4%">🧟</span>'+
+ '<div class="qs-vig"></div>'+
+ '<div class="qs-logo">'+
+ '<svg viewBox="0 0 100 100" width="100" height="100"><defs><linearGradient id="qsg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#00ff88"/><stop offset="1" stop-color="#00aaff"/></linearGradient></defs>'+
+ '<polygon points="50,5 90,27 90,73 50,95 10,73 10,27" fill="none" stroke="url(#qsg)" stroke-width="5"/>'+
+ '<text x="50" y="67" text-anchor="middle" font-size="54" font-weight="900" fill="url(#qsg)" font-family="Arial Black,Impact,sans-serif">Q</text></svg>'+
+ '<div class="qs-brand">QAZI GAMES</div><div class="qs-sub">PRESENTS</div></div>'+
+ '<div class="qs-load">'+
+ '<div class="qs-title"><span>🧟 ZOMBIE</span><br><span>SURVIVAL</span></div>'+
+ '<div class="qs-by">A QAZI GAMES PRODUCTION</div>'+
+ '<div class="qs-bar"><div class="qs-fill"></div></div>'+
+ '<div class="qs-pct">LOADING 0%</div>'+
+ '<div class="qs-tip"></div></div>'+
+ '<div class="qs-skip">Tap to skip</div>';
+document.body.insertBefore(el,document.body.firstChild);
+
+var fill=el.querySelector('.qs-fill'),pct=el.querySelector('.qs-pct'),tip=el.querySelector('.qs-tip');
+tip.textContent=tips[Math.floor(Math.random()*tips.length)];
+var loaded=document.readyState==='complete',done=false,start=0,p=0,DUR=2300;
+window.addEventListener('load',function(){loaded=true});
+
+function finish(){
+  if(done)return;done=true;
+  fill.style.width='100%';pct.textContent='LOADING 100%';
+  el.style.opacity='0';el.style.pointerEvents='none';
+  setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el)},650);
+}
+function tick(t){
+  if(done)return;
+  if(!start)start=t;
+  var target=Math.min(100,(t-start)/DUR*100);
+  if(!loaded)target=Math.min(target,92);
+  p=Math.max(p,target);
+  fill.style.width=p+'%';pct.textContent='LOADING '+Math.floor(p)+'%';
+  if(p>=100){setTimeout(finish,250);return}
+  requestAnimationFrame(tick);
+}
+setTimeout(function(){el.classList.add('s2');requestAnimationFrame(tick)},1900);
+el.addEventListener('pointerdown',function(){if(el.classList.contains('s2'))finish()});
+setTimeout(finish,9000);
+})();
+</script>
+<!-- ===== END SPLASH ===== -->
 <div id="hud">
   <div class="hud-box" id="hud-hp">
     <div class="hud-label">HP</div>
